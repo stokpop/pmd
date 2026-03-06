@@ -25,10 +25,11 @@ All other files in this PMD module are licensed under BSD.
 Updated grammar files are taken from https://github.com/antlr/grammars-v4 which
 based its grammar on https://kotlinlang.org/grammar/.
 See discussion in the issue: https://github.com/antlr/grammars-v4/issues/3965
-Most recent update (2026-03-01): https://github.com/antlr/grammars-v4/pull/4770
+Most recent update (March 2026): https://github.com/antlr/grammars-v4/pull/4770
 
 This is an "informal Kotlin grammar" but it might be the best available for PMD purposes.
 Not sure what version of Kotlin it is based on, but seems more recent that the previous 1.8 version.
+
 
 ## Currently used version
 
@@ -99,3 +100,25 @@ To run tests:
 ```shell
 ./mvnw test -pl pmd-kotlin
 ```
+
+## Developer notes
+
+### Kotlin: multi-`$` string templates
+
+PMD's Kotlin frontend is based on an ANTLR4 lexer/parser in `pmd-kotlin`. The lexer supports Kotlin's *multi-dollar string templates* (sometimes used to embed formats like JSON that contain `$`, without triggering interpolation).
+
+Kotlin allows prefixing a string literal opener with one or more `$` characters:
+
+- `"..."` / `"""..."""`: normal Kotlin interpolation starts with `$name` or `${expr}`
+- `$$"..."` / `$$"""..."""`: interpolation starts with `$$name` or `$${expr}`
+- `$$$"..."` / `$$$"""..."""`: interpolation starts with `$$$name` or `$$${expr}`
+
+This means that inside a `$$$"""..."""` string, occurrences of `$` or `$$` are treated as plain text, while `$$$identifier` and `$$${...}` start templates.
+
+The lexer rules implementing this live in `pmd-kotlin/src/main/antlr4/net/sourceforge/pmd/lang/kotlin/ast/KotlinLexer.g4`:
+
+- `QUOTE_OPEN` / `TRIPLE_QUOTE_OPEN` accept an optional `$*` prefix
+- `FieldIdentifier` accepts `$+Identifier` (so `$$$foo` is a valid template reference)
+- `LineStrExprStart` / `MultiLineStrExprStart` accept `$+{` (so `$$${...}` is a valid template expression)
+
+See: https://kotlinlang.org/docs/strings.html#multi-dollar-string-interpolation

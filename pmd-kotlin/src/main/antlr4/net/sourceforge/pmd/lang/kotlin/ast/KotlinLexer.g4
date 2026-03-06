@@ -165,8 +165,8 @@ REIFIED     : 'reified';
 
 //
 
-QUOTE_OPEN        : '"'   -> pushMode(LineString);
-TRIPLE_QUOTE_OPEN : '"""' -> pushMode(MultiLineString);
+QUOTE_OPEN        : '$'* '"'   -> pushMode(LineString);
+TRIPLE_QUOTE_OPEN : '$'* '"""' -> pushMode(MultiLineString);
 
 RealLiteral: FloatLiteral | DoubleLiteral;
 
@@ -259,7 +259,7 @@ LabelReference: '@' Identifier;
 
 LabelDefinition: Identifier '@';
 
-FieldIdentifier: '$' Identifier;
+FieldIdentifier: '$'+ Identifier;
 
 CharacterLiteral: '\'' (EscapeSeq | .) '\'';
 
@@ -417,11 +417,13 @@ QUOTE_CLOSE: '"' -> popMode;
 
 LineStrRef: FieldIdentifier;
 
-LineStrText: ~('\\' | '"' | '$')+ | '$';
+// Accept `$` as plain text unless it begins a template. This avoids lexing errors on `$$`.
+LineStrText: (~('\\' | '"' | '$')+ | '$'+) { _input.LA(1) != '{' && !Character.isUnicodeIdentifierStart(_input.LA(1)) }?;
 
 LineStrEscapedChar: '\\' . | UniCharacterLiteral;
 
-LineStrExprStart: '${' -> pushMode(StringExpression);
+// Template start with any number of `$`, must match the prefix used to open the string.
+LineStrExprStart: '$'+ '{' -> pushMode(StringExpression);
 
 mode MultiLineString;
 
@@ -431,11 +433,13 @@ MultiLineStringQuote: '"'+;
 
 MultiLineStrRef: FieldIdentifier;
 
-MultiLineStrText: ~('\\' | '"' | '$')+ | '$';
+// Same idea for raw strings: `$` is text unless it starts a template.
+MultiLineStrText: (~('\\' | '"' | '$')+ | '$'+) { _input.LA(1) != '{' && !Character.isUnicodeIdentifierStart(_input.LA(1)) }?;
 
 MultiLineStrEscapedChar: '\\' .;
 
-MultiLineStrExprStart: '${' -> pushMode(StringExpression);
+// Template start with any number of `$`, must match the prefix used to open the string.
+MultiLineStrExprStart: '$'+ '{' -> pushMode(StringExpression);
 
 MultiLineNL: NL -> skip;
 
@@ -514,3 +518,4 @@ StrExpr_LabelDefinition : LabelDefinition                  -> type(LabelDefiniti
 StrExpr_Comment         : (LineComment | DelimitedComment) -> channel(HIDDEN);
 StrExpr_WS              : WS                               -> skip;
 StrExpr_NL              : NL                               -> skip;
+
