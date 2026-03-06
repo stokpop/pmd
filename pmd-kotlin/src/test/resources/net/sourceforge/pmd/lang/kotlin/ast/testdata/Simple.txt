@@ -1,270 +1,269 @@
 +- KotlinFile
    +- T-NL
    +- T-NL
-   +- PackageHeader
-   |  +- T-PACKAGE
-   |  +- Identifier
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |  |  +- T-Identifier
-   |  |  +- T-DOT
-   |  |  +- SimpleIdentifier
-   |  |     +- T-Identifier
-   |  +- Semi
-   |     +- T-NL
-   |     +- T-NL
-   +- ImportList
+   +- Preamble
+   |  +- PackageHeader
+   |  |  +- T-PACKAGE
+   |  |  +- Identifier
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |  |  +- T-Identifier
+   |  |  |  +- T-DOT
+   |  |  |  +- SimpleIdentifier
+   |  |  |     +- T-Identifier
+   |  |  +- Semi
+   |  |     +- T-NL
+   |  |     +- T-NL
+   |  +- ImportList
    +- TopLevelObject
-   |  +- Declaration
-   |  |  +- ClassDeclaration
-   |  |     +- T-CLASS
-   |  |     +- SimpleIdentifier
-   |  |     |  +- T-Identifier
-   |  |     +- ClassBody
-   |  |        +- T-LCURL
-   |  |        +- T-NL
-   |  |        +- ClassMemberDeclarations
-   |  |        |  +- ClassMemberDeclaration
-   |  |        |  |  +- Declaration
-   |  |        |  |     +- PropertyDeclaration
-   |  |        |  |        +- Modifiers
-   |  |        |  |        |  +- Modifier
-   |  |        |  |        |     +- VisibilityModifier
-   |  |        |  |        |        +- T-PRIVATE
-   |  |        |  |        +- T-VAL
-   |  |        |  |        +- VariableDeclaration
-   |  |        |  |        |  +- SimpleIdentifier
-   |  |        |  |        |     +- T-Identifier
-   |  |        |  |        +- T-ASSIGNMENT
-   |  |        |  |        +- Expression
-   |  |        |  |        |  +- Disjunction
-   |  |        |  |        |     +- Conjunction
-   |  |        |  |        |        +- Equality
-   |  |        |  |        |           +- Comparison
-   |  |        |  |        |              +- GenericCallLikeComparison
-   |  |        |  |        |                 +- InfixOperation
-   |  |        |  |        |                    +- ElvisExpression
-   |  |        |  |        |                       +- InfixFunctionCall
-   |  |        |  |        |                          +- RangeExpression
-   |  |        |  |        |                             +- AdditiveExpression
-   |  |        |  |        |                                +- MultiplicativeExpression
-   |  |        |  |        |                                   +- AsExpression
-   |  |        |  |        |                                      +- PrefixUnaryExpression
-   |  |        |  |        |                                         +- PostfixUnaryExpression
-   |  |        |  |        |                                            +- PrimaryExpression
-   |  |        |  |        |                                               +- StringLiteral
-   |  |        |  |        |                                                  +- LineStringLiteral
-   |  |        |  |        |                                                     +- T-QUOTE_OPEN
-   |  |        |  |        |                                                     +- LineStringContent
-   |  |        |  |        |                                                     |  +- T-LineStrText
-   |  |        |  |        |                                                     +- T-QUOTE_CLOSE
-   |  |        |  |        +- T-NL
-   |  |        |  +- ClassMemberDeclaration
-   |  |        |  |  +- Declaration
-   |  |        |  |     +- FunctionDeclaration
-   |  |        |  |        +- T-FUN
-   |  |        |  |        +- SimpleIdentifier
-   |  |        |  |        |  +- T-Identifier
-   |  |        |  |        +- FunctionValueParameters
-   |  |        |  |        |  +- T-LPAREN
-   |  |        |  |        |  +- T-RPAREN
-   |  |        |  |        +- FunctionBody
-   |  |        |  |           +- T-ASSIGNMENT
-   |  |        |  |           +- Expression
-   |  |        |  |              +- Disjunction
-   |  |        |  |                 +- Conjunction
-   |  |        |  |                    +- Equality
-   |  |        |  |                       +- Comparison
-   |  |        |  |                          +- GenericCallLikeComparison
-   |  |        |  |                             +- InfixOperation
-   |  |        |  |                                +- ElvisExpression
-   |  |        |  |                                   +- InfixFunctionCall
-   |  |        |  |                                      +- RangeExpression
-   |  |        |  |                                         +- AdditiveExpression
-   |  |        |  |                                            +- MultiplicativeExpression
-   |  |        |  |                                               +- AsExpression
-   |  |        |  |                                                  +- PrefixUnaryExpression
-   |  |        |  |                                                     +- PostfixUnaryExpression
-   |  |        |  |                                                        +- PrimaryExpression
-   |  |        |  |                                                           +- StringLiteral
-   |  |        |  |                                                              +- LineStringLiteral
-   |  |        |  |                                                                 +- T-QUOTE_OPEN
-   |  |        |  |                                                                 +- LineStringContent
-   |  |        |  |                                                                 |  +- T-LineStrText
-   |  |        |  |                                                                 +- LineStringContent
-   |  |        |  |                                                                 |  +- T-LineStrRef
-   |  |        |  |                                                                 +- LineStringContent
-   |  |        |  |                                                                 |  +- T-LineStrText
-   |  |        |  |                                                                 +- T-QUOTE_CLOSE
-   |  |        |  +- Semis
-   |  |        |     +- T-NL
-   |  |        +- T-RCURL
-   |  +- Semis
-   |     +- T-NL
-   |     +- T-NL
+   |  +- ClassDeclaration
+   |     +- T-CLASS
+   |     +- SimpleIdentifier
+   |     |  +- T-Identifier
+   |     +- ClassBody
+   |        +- T-LCURL
+   |        +- T-NL
+   |        +- ClassMemberDeclaration
+   |        |  +- PropertyDeclaration
+   |        |  |  +- ModifierList
+   |        |  |  |  +- Modifier
+   |        |  |  |     +- VisibilityModifier
+   |        |  |  |        +- T-PRIVATE
+   |        |  |  +- T-VAL
+   |        |  |  +- VariableDeclaration
+   |        |  |  |  +- SimpleIdentifier
+   |        |  |  |     +- T-Identifier
+   |        |  |  +- T-ASSIGNMENT
+   |        |  |  +- Expression
+   |        |  |     +- Disjunction
+   |        |  |        +- Conjunction
+   |        |  |           +- EqualityComparison
+   |        |  |              +- Comparison
+   |        |  |                 +- NamedInfix
+   |        |  |                    +- ElvisExpression
+   |        |  |                       +- InfixFunctionCall
+   |        |  |                          +- RangeExpression
+   |        |  |                             +- AdditiveExpression
+   |        |  |                                +- MultiplicativeExpression
+   |        |  |                                   +- TypeRHS
+   |        |  |                                      +- PrefixUnaryExpression
+   |        |  |                                         +- PostfixUnaryExpression
+   |        |  |                                            +- AtomicExpression
+   |        |  |                                               +- LiteralConstant
+   |        |  |                                                  +- StringLiteral
+   |        |  |                                                     +- LineStringLiteral
+   |        |  |                                                        +- T-QUOTE_OPEN
+   |        |  |                                                        +- LineStringContent
+   |        |  |                                                        |  +- T-LineStrText
+   |        |  |                                                        +- T-QUOTE_CLOSE
+   |        |  +- Anysemi
+   |        |     +- T-NL
+   |        +- ClassMemberDeclaration
+   |        |  +- FunctionDeclaration
+   |        |  |  +- T-FUN
+   |        |  |  +- Identifier
+   |        |  |  |  +- SimpleIdentifier
+   |        |  |  |     +- T-Identifier
+   |        |  |  +- FunctionValueParameters
+   |        |  |  |  +- T-LPAREN
+   |        |  |  |  +- T-RPAREN
+   |        |  |  +- FunctionBody
+   |        |  |     +- T-ASSIGNMENT
+   |        |  |     +- Expression
+   |        |  |        +- Disjunction
+   |        |  |           +- Conjunction
+   |        |  |              +- EqualityComparison
+   |        |  |                 +- Comparison
+   |        |  |                    +- NamedInfix
+   |        |  |                       +- ElvisExpression
+   |        |  |                          +- InfixFunctionCall
+   |        |  |                             +- RangeExpression
+   |        |  |                                +- AdditiveExpression
+   |        |  |                                   +- MultiplicativeExpression
+   |        |  |                                      +- TypeRHS
+   |        |  |                                         +- PrefixUnaryExpression
+   |        |  |                                            +- PostfixUnaryExpression
+   |        |  |                                               +- AtomicExpression
+   |        |  |                                                  +- LiteralConstant
+   |        |  |                                                     +- StringLiteral
+   |        |  |                                                        +- LineStringLiteral
+   |        |  |                                                           +- T-QUOTE_OPEN
+   |        |  |                                                           +- LineStringContent
+   |        |  |                                                           |  +- T-LineStrText
+   |        |  |                                                           +- LineStringContent
+   |        |  |                                                           |  +- T-LineStrRef
+   |        |  |                                                           +- LineStringContent
+   |        |  |                                                           |  +- T-LineStrText
+   |        |  |                                                           +- T-QUOTE_CLOSE
+   |        |  +- Anysemi
+   |        |     +- T-NL
+   |        +- T-RCURL
+   +- Anysemi
+   |  +- T-NL
+   +- Anysemi
+   |  +- T-NL
    +- TopLevelObject
-   |  +- Declaration
-   |  |  +- FunctionDeclaration
-   |  |     +- T-FUN
-   |  |     +- SimpleIdentifier
-   |  |     |  +- T-Identifier
-   |  |     +- FunctionValueParameters
-   |  |     |  +- T-LPAREN
-   |  |     |  +- T-RPAREN
-   |  |     +- FunctionBody
-   |  |        +- Block
-   |  |           +- T-LCURL
-   |  |           +- T-NL
-   |  |           +- Statements
-   |  |           |  +- Statement
-   |  |           |  |  +- Declaration
-   |  |           |  |     +- PropertyDeclaration
-   |  |           |  |        +- T-VAL
-   |  |           |  |        +- VariableDeclaration
-   |  |           |  |        |  +- SimpleIdentifier
-   |  |           |  |        |     +- T-Identifier
-   |  |           |  |        +- T-ASSIGNMENT
-   |  |           |  |        +- Expression
-   |  |           |  |           +- Disjunction
-   |  |           |  |              +- Conjunction
-   |  |           |  |                 +- Equality
-   |  |           |  |                    +- Comparison
-   |  |           |  |                       +- GenericCallLikeComparison
-   |  |           |  |                          +- InfixOperation
-   |  |           |  |                             +- ElvisExpression
-   |  |           |  |                                +- InfixFunctionCall
-   |  |           |  |                                   +- RangeExpression
-   |  |           |  |                                      +- AdditiveExpression
-   |  |           |  |                                         +- MultiplicativeExpression
-   |  |           |  |                                            +- AsExpression
-   |  |           |  |                                               +- PrefixUnaryExpression
-   |  |           |  |                                                  +- PostfixUnaryExpression
-   |  |           |  |                                                     +- PrimaryExpression
-   |  |           |  |                                                     |  +- SimpleIdentifier
-   |  |           |  |                                                     |     +- T-Identifier
-   |  |           |  |                                                     +- PostfixUnarySuffix
-   |  |           |  |                                                        +- CallSuffix
-   |  |           |  |                                                           +- ValueArguments
-   |  |           |  |                                                              +- T-LPAREN
-   |  |           |  |                                                              +- T-RPAREN
-   |  |           |  +- Semis
-   |  |           |  |  +- T-NL
-   |  |           |  +- Statement
-   |  |           |  |  +- Expression
-   |  |           |  |     +- Disjunction
-   |  |           |  |        +- Conjunction
-   |  |           |  |           +- Equality
-   |  |           |  |              +- Comparison
-   |  |           |  |                 +- GenericCallLikeComparison
-   |  |           |  |                    +- InfixOperation
-   |  |           |  |                       +- ElvisExpression
-   |  |           |  |                          +- InfixFunctionCall
-   |  |           |  |                             +- RangeExpression
-   |  |           |  |                                +- AdditiveExpression
-   |  |           |  |                                   +- MultiplicativeExpression
-   |  |           |  |                                      +- AsExpression
-   |  |           |  |                                         +- PrefixUnaryExpression
-   |  |           |  |                                            +- PostfixUnaryExpression
-   |  |           |  |                                               +- PrimaryExpression
-   |  |           |  |                                               |  +- SimpleIdentifier
-   |  |           |  |                                               |     +- T-Identifier
-   |  |           |  |                                               +- PostfixUnarySuffix
-   |  |           |  |                                                  +- CallSuffix
-   |  |           |  |                                                     +- ValueArguments
-   |  |           |  |                                                        +- T-LPAREN
-   |  |           |  |                                                        +- ValueArgument
-   |  |           |  |                                                        |  +- Expression
-   |  |           |  |                                                        |     +- Disjunction
-   |  |           |  |                                                        |        +- Conjunction
-   |  |           |  |                                                        |           +- Equality
-   |  |           |  |                                                        |              +- Comparison
-   |  |           |  |                                                        |                 +- GenericCallLikeComparison
-   |  |           |  |                                                        |                    +- InfixOperation
-   |  |           |  |                                                        |                       +- ElvisExpression
-   |  |           |  |                                                        |                          +- InfixFunctionCall
-   |  |           |  |                                                        |                             +- RangeExpression
-   |  |           |  |                                                        |                                +- AdditiveExpression
-   |  |           |  |                                                        |                                   +- MultiplicativeExpression
-   |  |           |  |                                                        |                                      +- AsExpression
-   |  |           |  |                                                        |                                         +- PrefixUnaryExpression
-   |  |           |  |                                                        |                                            +- PostfixUnaryExpression
-   |  |           |  |                                                        |                                               +- PrimaryExpression
-   |  |           |  |                                                        |                                                  +- SimpleIdentifier
-   |  |           |  |                                                        |                                                     +- T-Identifier
-   |  |           |  |                                                        +- T-RPAREN
-   |  |           |  +- Semis
-   |  |           |  |  +- T-NL
-   |  |           |  +- Statement
-   |  |           |  |  +- Expression
-   |  |           |  |     +- Disjunction
-   |  |           |  |        +- Conjunction
-   |  |           |  |           +- Equality
-   |  |           |  |              +- Comparison
-   |  |           |  |                 +- GenericCallLikeComparison
-   |  |           |  |                    +- InfixOperation
-   |  |           |  |                       +- ElvisExpression
-   |  |           |  |                          +- InfixFunctionCall
-   |  |           |  |                             +- RangeExpression
-   |  |           |  |                                +- AdditiveExpression
-   |  |           |  |                                   +- MultiplicativeExpression
-   |  |           |  |                                      +- AsExpression
-   |  |           |  |                                         +- PrefixUnaryExpression
-   |  |           |  |                                            +- PostfixUnaryExpression
-   |  |           |  |                                               +- PrimaryExpression
-   |  |           |  |                                               |  +- SimpleIdentifier
-   |  |           |  |                                               |     +- T-Identifier
-   |  |           |  |                                               +- PostfixUnarySuffix
-   |  |           |  |                                                  +- CallSuffix
-   |  |           |  |                                                     +- ValueArguments
-   |  |           |  |                                                        +- T-LPAREN
-   |  |           |  |                                                        +- ValueArgument
-   |  |           |  |                                                        |  +- Expression
-   |  |           |  |                                                        |     +- Disjunction
-   |  |           |  |                                                        |        +- Conjunction
-   |  |           |  |                                                        |           +- Equality
-   |  |           |  |                                                        |              +- Comparison
-   |  |           |  |                                                        |                 +- GenericCallLikeComparison
-   |  |           |  |                                                        |                    +- InfixOperation
-   |  |           |  |                                                        |                       +- ElvisExpression
-   |  |           |  |                                                        |                          +- InfixFunctionCall
-   |  |           |  |                                                        |                             +- RangeExpression
-   |  |           |  |                                                        |                                +- AdditiveExpression
-   |  |           |  |                                                        |                                   +- MultiplicativeExpression
-   |  |           |  |                                                        |                                      +- AsExpression
-   |  |           |  |                                                        |                                         +- PrefixUnaryExpression
-   |  |           |  |                                                        |                                            +- PostfixUnaryExpression
-   |  |           |  |                                                        |                                               +- PrimaryExpression
-   |  |           |  |                                                        |                                               |  +- SimpleIdentifier
-   |  |           |  |                                                        |                                               |     +- T-Identifier
-   |  |           |  |                                                        |                                               +- PostfixUnarySuffix
-   |  |           |  |                                                        |                                               |  +- NavigationSuffix
-   |  |           |  |                                                        |                                               |     +- MemberAccessOperator
-   |  |           |  |                                                        |                                               |     |  +- T-DOT
-   |  |           |  |                                                        |                                               |     +- SimpleIdentifier
-   |  |           |  |                                                        |                                               |        +- T-Identifier
-   |  |           |  |                                                        |                                               +- PostfixUnarySuffix
-   |  |           |  |                                                        |                                                  +- CallSuffix
-   |  |           |  |                                                        |                                                     +- ValueArguments
-   |  |           |  |                                                        |                                                        +- T-LPAREN
-   |  |           |  |                                                        |                                                        +- T-RPAREN
-   |  |           |  |                                                        +- T-RPAREN
-   |  |           |  +- Semis
-   |  |           |     +- T-NL
-   |  |           +- T-RCURL
-   |  +- Semis
-   |     +- T-NL
+   |  +- FunctionDeclaration
+   |     +- T-FUN
+   |     +- Identifier
+   |     |  +- SimpleIdentifier
+   |     |     +- T-Identifier
+   |     +- FunctionValueParameters
+   |     |  +- T-LPAREN
+   |     |  +- T-RPAREN
+   |     +- FunctionBody
+   |        +- Block
+   |           +- T-LCURL
+   |           +- Statements
+   |           |  +- Anysemi
+   |           |  |  +- T-NL
+   |           |  +- Statement
+   |           |  |  +- Declaration
+   |           |  |     +- PropertyDeclaration
+   |           |  |        +- T-VAL
+   |           |  |        +- VariableDeclaration
+   |           |  |        |  +- SimpleIdentifier
+   |           |  |        |     +- T-Identifier
+   |           |  |        +- T-ASSIGNMENT
+   |           |  |        +- Expression
+   |           |  |           +- Disjunction
+   |           |  |              +- Conjunction
+   |           |  |                 +- EqualityComparison
+   |           |  |                    +- Comparison
+   |           |  |                       +- NamedInfix
+   |           |  |                          +- ElvisExpression
+   |           |  |                             +- InfixFunctionCall
+   |           |  |                                +- RangeExpression
+   |           |  |                                   +- AdditiveExpression
+   |           |  |                                      +- MultiplicativeExpression
+   |           |  |                                         +- TypeRHS
+   |           |  |                                            +- PrefixUnaryExpression
+   |           |  |                                               +- PostfixUnaryExpression
+   |           |  |                                                  +- AtomicExpression
+   |           |  |                                                  |  +- SimpleIdentifier
+   |           |  |                                                  |     +- T-Identifier
+   |           |  |                                                  +- PostfixUnaryOperation
+   |           |  |                                                     +- CallSuffix
+   |           |  |                                                        +- ValueArguments
+   |           |  |                                                           +- T-LPAREN
+   |           |  |                                                           +- T-RPAREN
+   |           |  +- Anysemi
+   |           |  |  +- T-NL
+   |           |  +- Statement
+   |           |  |  +- BlockLevelExpression
+   |           |  |     +- Expression
+   |           |  |        +- Disjunction
+   |           |  |           +- Conjunction
+   |           |  |              +- EqualityComparison
+   |           |  |                 +- Comparison
+   |           |  |                    +- NamedInfix
+   |           |  |                       +- ElvisExpression
+   |           |  |                          +- InfixFunctionCall
+   |           |  |                             +- RangeExpression
+   |           |  |                                +- AdditiveExpression
+   |           |  |                                   +- MultiplicativeExpression
+   |           |  |                                      +- TypeRHS
+   |           |  |                                         +- PrefixUnaryExpression
+   |           |  |                                            +- PostfixUnaryExpression
+   |           |  |                                               +- AtomicExpression
+   |           |  |                                               |  +- SimpleIdentifier
+   |           |  |                                               |     +- T-Identifier
+   |           |  |                                               +- PostfixUnaryOperation
+   |           |  |                                                  +- CallSuffix
+   |           |  |                                                     +- ValueArguments
+   |           |  |                                                        +- T-LPAREN
+   |           |  |                                                        +- ValueArgument
+   |           |  |                                                        |  +- Expression
+   |           |  |                                                        |     +- Disjunction
+   |           |  |                                                        |        +- Conjunction
+   |           |  |                                                        |           +- EqualityComparison
+   |           |  |                                                        |              +- Comparison
+   |           |  |                                                        |                 +- NamedInfix
+   |           |  |                                                        |                    +- ElvisExpression
+   |           |  |                                                        |                       +- InfixFunctionCall
+   |           |  |                                                        |                          +- RangeExpression
+   |           |  |                                                        |                             +- AdditiveExpression
+   |           |  |                                                        |                                +- MultiplicativeExpression
+   |           |  |                                                        |                                   +- TypeRHS
+   |           |  |                                                        |                                      +- PrefixUnaryExpression
+   |           |  |                                                        |                                         +- PostfixUnaryExpression
+   |           |  |                                                        |                                            +- AtomicExpression
+   |           |  |                                                        |                                               +- SimpleIdentifier
+   |           |  |                                                        |                                                  +- T-Identifier
+   |           |  |                                                        +- T-RPAREN
+   |           |  +- Anysemi
+   |           |  |  +- T-NL
+   |           |  +- Statement
+   |           |  |  +- BlockLevelExpression
+   |           |  |     +- Expression
+   |           |  |        +- Disjunction
+   |           |  |           +- Conjunction
+   |           |  |              +- EqualityComparison
+   |           |  |                 +- Comparison
+   |           |  |                    +- NamedInfix
+   |           |  |                       +- ElvisExpression
+   |           |  |                          +- InfixFunctionCall
+   |           |  |                             +- RangeExpression
+   |           |  |                                +- AdditiveExpression
+   |           |  |                                   +- MultiplicativeExpression
+   |           |  |                                      +- TypeRHS
+   |           |  |                                         +- PrefixUnaryExpression
+   |           |  |                                            +- PostfixUnaryExpression
+   |           |  |                                               +- AtomicExpression
+   |           |  |                                               |  +- SimpleIdentifier
+   |           |  |                                               |     +- T-Identifier
+   |           |  |                                               +- PostfixUnaryOperation
+   |           |  |                                                  +- CallSuffix
+   |           |  |                                                     +- ValueArguments
+   |           |  |                                                        +- T-LPAREN
+   |           |  |                                                        +- ValueArgument
+   |           |  |                                                        |  +- Expression
+   |           |  |                                                        |     +- Disjunction
+   |           |  |                                                        |        +- Conjunction
+   |           |  |                                                        |           +- EqualityComparison
+   |           |  |                                                        |              +- Comparison
+   |           |  |                                                        |                 +- NamedInfix
+   |           |  |                                                        |                    +- ElvisExpression
+   |           |  |                                                        |                       +- InfixFunctionCall
+   |           |  |                                                        |                          +- RangeExpression
+   |           |  |                                                        |                             +- AdditiveExpression
+   |           |  |                                                        |                                +- MultiplicativeExpression
+   |           |  |                                                        |                                   +- TypeRHS
+   |           |  |                                                        |                                      +- PrefixUnaryExpression
+   |           |  |                                                        |                                         +- PostfixUnaryExpression
+   |           |  |                                                        |                                            +- AtomicExpression
+   |           |  |                                                        |                                            |  +- SimpleIdentifier
+   |           |  |                                                        |                                            |     +- T-Identifier
+   |           |  |                                                        |                                            +- PostfixUnaryOperation
+   |           |  |                                                        |                                               +- MemberAccessOperator
+   |           |  |                                                        |                                               |  +- T-DOT
+   |           |  |                                                        |                                               +- PostfixUnaryExpression
+   |           |  |                                                        |                                                  +- AtomicExpression
+   |           |  |                                                        |                                                  |  +- SimpleIdentifier
+   |           |  |                                                        |                                                  |     +- T-Identifier
+   |           |  |                                                        |                                                  +- PostfixUnaryOperation
+   |           |  |                                                        |                                                     +- CallSuffix
+   |           |  |                                                        |                                                        +- ValueArguments
+   |           |  |                                                        |                                                           +- T-LPAREN
+   |           |  |                                                        |                                                           +- T-RPAREN
+   |           |  |                                                        +- T-RPAREN
+   |           |  +- Anysemi
+   |           |     +- T-NL
+   |           +- T-RCURL
+   +- Anysemi
+   |  +- T-NL
    +- EOF

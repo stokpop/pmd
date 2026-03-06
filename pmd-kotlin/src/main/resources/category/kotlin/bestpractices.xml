@@ -22,7 +22,7 @@ Rules which enforce generally accepted best practices.
         <properties>
             <property name="xpath">
                 <value><![CDATA[
-                    //FunctionDeclaration/SimpleIdentifier/T-Identifier[string-length(@Text) < 3]
+                    //FunctionDeclaration/Identifier/SimpleIdentifier/T-Identifier[string-length(@Text) < 3]
                 ]]></value>
             </property>
         </properties>

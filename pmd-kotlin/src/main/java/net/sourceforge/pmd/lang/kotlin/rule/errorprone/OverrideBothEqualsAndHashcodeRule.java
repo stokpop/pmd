@@ -7,19 +7,17 @@ package net.sourceforge.pmd.lang.kotlin.rule.errorprone;
 
 import java.util.List;
 
+import net.sourceforge.pmd.lang.kotlin.ast.*;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import net.sourceforge.pmd.lang.kotlin.AbstractKotlinRule;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtClassDeclaration;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtClassMemberDeclaration;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtClassMemberDeclarations;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtDeclaration;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtFunctionDeclaration;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinTerminalNode;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinVisitor;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinVisitorBase;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtSimpleIdentifier;
 import net.sourceforge.pmd.lang.rule.RuleTargetSelector;
 import net.sourceforge.pmd.reporting.RuleContext;
+
+import static net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.*;
 
 public class OverrideBothEqualsAndHashcodeRule extends AbstractKotlinRule {
 
@@ -32,16 +30,13 @@ public class OverrideBothEqualsAndHashcodeRule extends AbstractKotlinRule {
 
     @Override
     protected @NonNull RuleTargetSelector buildTargetSelector() {
-        return RuleTargetSelector.forTypes(KtClassMemberDeclarations.class);
+        return RuleTargetSelector.forTypes(KtTopLevelObject.class);
     }
 
     private static final class Visitor extends KotlinVisitorBase<RuleContext, Void> {
         @Override
-        public Void visitClassMemberDeclarations(KtClassMemberDeclarations node, RuleContext data) {
-            List<KtFunctionDeclaration> functions = node.children(KtClassMemberDeclaration.class)
-                .children(KtDeclaration.class)
-                .children(KtFunctionDeclaration.class)
-                .toList();
+        public Void visitClassBody(KtClassBody node, RuleContext data) {
+            List<KtFunctionDeclaration> functions = node.descendants(KtFunctionDeclaration.class).toList();
 
             boolean hasEqualMethod = functions.stream().filter(this::isEqualsMethod).count() == 1L;
             boolean hasHashCodeMethod = functions.stream().filter(this::isHashCodeMethod).count() == 1L;
@@ -50,7 +45,7 @@ public class OverrideBothEqualsAndHashcodeRule extends AbstractKotlinRule {
                 data.addViolation(node.ancestors(KtClassDeclaration.class).first());
             }
 
-            return super.visitClassMemberDeclarations(node, data);
+            return super.visitClassBody(node, data);
         }
 
         private boolean isEqualsMethod(KtFunctionDeclaration fun) {
@@ -66,11 +61,21 @@ public class OverrideBothEqualsAndHashcodeRule extends AbstractKotlinRule {
         }
 
         private String getFunctionName(KtFunctionDeclaration fun) {
-            return fun.simpleIdentifier().children(KotlinTerminalNode.class).first().getText();
+            // `simpleIdentifier()` returns a java.util.List<KtSimpleIdentifier>, which does not have getFirst().
+            // Safely get the first identifier if present.
+            List<KtSimpleIdentifier> ids = fun.identifier().simpleIdentifier();
+            if (ids == null || ids.isEmpty()) {
+                return "";
+            }
+            KotlinTerminalNode term = ids.get(0).descendants(KotlinTerminalNode.class).first();
+            if (term == null) {
+                return "";
+            }
+            return term.getText();
         }
 
         private boolean hasOverrideModifier(KtFunctionDeclaration fun) {
-            return fun.modifiers().descendants(KotlinTerminalNode.class)
+            return fun.functionModifierList().descendants(KotlinTerminalNode.class)
                     .any(t -> "override".equals(t.getText()));
         }
 

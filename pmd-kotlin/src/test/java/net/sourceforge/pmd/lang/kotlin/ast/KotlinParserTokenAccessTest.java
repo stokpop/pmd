@@ -4,14 +4,15 @@
 
 package net.sourceforge.pmd.lang.kotlin.ast;
 
+import static net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.ADD_ASSIGNMENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.junit.jupiter.api.Test;
 
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtAssignmentAndOperator;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtFunctionDeclaration;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtAssignmentOperator;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtKotlinFile;
 
 /**
@@ -24,7 +25,7 @@ class KotlinParserTokenAccessTest {
 
     @Test
     void testGetTokensInKtAssignmentAndOperator() {
-        String code = "class Foo { fun foo() { var a = 42; a += 1 } }";
+        String code = "class Foo { fun foo() { var a = 42; a += 1 }; }";
 
         // Parse using KotlinParsingHelper
         KtKotlinFile root = KotlinParsingHelper.DEFAULT.parse(code);
@@ -36,7 +37,7 @@ class KotlinParserTokenAccessTest {
         assertNotNull(fn, "Expected a function declaration in the parsed Kotlin file");
 
         // Find the first KtAssignmentAndOperator node within the function body
-        KtAssignmentAndOperator idNode = fn.descendants(KtAssignmentAndOperator.class).first();
+        KtAssignmentOperator idNode = fn.descendants(KtAssignmentOperator.class).first();
         assertNotNull(idNode, "Expected a assignmentAndOperator within the function node");
         // Call the generated accessor that returns the ADD_ASSIGNMENT terminal node.
         // This calls getToken/getTokens under the hood and will exercise
@@ -44,6 +45,6 @@ class KotlinParserTokenAccessTest {
         TerminalNode tn = idNode.ADD_ASSIGNMENT();
         assertNotNull(tn, "Expected an ADD_ASSIGNMENT terminal node");
         assertEquals("+=", tn.getText());
-        assertEquals(KotlinParser.ADD_ASSIGNMENT, tn.getSymbol().getType());
+        assertEquals(ADD_ASSIGNMENT, tn.getSymbol().getType());
     }
 }
