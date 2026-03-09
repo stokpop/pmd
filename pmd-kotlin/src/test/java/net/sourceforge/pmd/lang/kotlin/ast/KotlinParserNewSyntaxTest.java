@@ -4,15 +4,24 @@
 
 package net.sourceforge.pmd.lang.kotlin.ast;
 
-import net.sourceforge.pmd.lang.ast.NodeStream;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtKotlinFile;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtKotlinFile;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringContent;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringExpression;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringLiteral;
+
+
 
 /**
  * Minimal test that parses a Kotlin snippets with new syntax and see if there
@@ -20,17 +29,32 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 class KotlinParserNewSyntaxTest {
 
+    public static final int BUFFER_BYTES = 8 * 1024;
+
+    private static byte[] readAllBytesCompat(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[BUFFER_BYTES];
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
+        }
+        return out.toByteArray();
+    }
+
+    private static String readResource(String classpathPath) {
+        try (InputStream in = KotlinParserNewSyntaxTest.class.getClassLoader().getResourceAsStream(classpathPath)) {
+            if (in == null) {
+                throw new IllegalArgumentException("Test resource not found on classpath: " + classpathPath);
+            }
+            return new String(readAllBytesCompat(in), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @Test
     void testMultiLineStringRefs() {
-        String code = "class Foo { fun foo() { val productName = \"carrot\"\n" +
-                "val requestedData =\n" +
-                "    $$$\"\"\"{\n" +
-                "      \"currency\": \"$\",\n" +
-                "      \"enteredAmount\": \"42.45 $$\",\n" +
-                "      \"$$serviceField\": \"none\",\n" +
-                "      \"product\": \"$$$productName\"\n" +
-                "    }\n" +
-                "    \"\"\" }; }";
+        String code = readResource("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringRefs.kt");
 
         // Parse using KotlinParsingHelper
         KtKotlinFile root = KotlinParsingHelper.DEFAULT.parse(code);
@@ -45,7 +69,7 @@ class KotlinParserNewSyntaxTest {
 
         long refCount = root.descendants(KtMultiLineStringContent.class)
                             .filter(c -> c.getFirstChild() instanceof KotlinTerminalNode
-                                    && ((KotlinTerminalNode) c.getFirstChild()).getFirstAntlrToken().getType() == MultiLineStrRef)
+                                    && ((KotlinTerminalNode) c.getFirstChild()).getFirstAntlrToken().getType() == KotlinParser.MultiLineStrRef)
                             .count();
         assertEquals(2, refCount, "Expected two multi-line string refs ($$serviceField and $$$productName)");
 
@@ -55,15 +79,7 @@ class KotlinParserNewSyntaxTest {
 
     @Test
     void testMultiLineStringExpressions() {
-        String code = "class Foo { fun foo() { val productName = \"carrot\"\n" +
-                "val requestedData =\n" +
-                "    $$$\"\"\"{\n" +
-                "      \"currency\": \"$\",\n" +
-                "      \"enteredAmount\": \"42.45 $$\",\n" +
-                "      \"$${serviceField.length()}\": \"none\",\n" +
-                "      \"product\": \"$$${productName.length()}\"\n" +
-                "    }\n" +
-                "    \"\"\" }; }";
+        String code = readResource("net/sourceforge/pmd/lang/kotlin/ast/testdata/MultiLineStringExpressions.kt");
 
         // Parse using KotlinParsingHelper
         KtKotlinFile root = KotlinParsingHelper.DEFAULT.parse(code);

@@ -7,17 +7,19 @@ package net.sourceforge.pmd.lang.kotlin.rule.errorprone;
 
 import java.util.List;
 
-import net.sourceforge.pmd.lang.kotlin.ast.*;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import net.sourceforge.pmd.lang.kotlin.AbstractKotlinRule;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtClassBody;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtClassDeclaration;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtFunctionDeclaration;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtSimpleIdentifier;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtTopLevelObject;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinTerminalNode;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinVisitor;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinVisitorBase;
 import net.sourceforge.pmd.lang.rule.RuleTargetSelector;
 import net.sourceforge.pmd.reporting.RuleContext;
-
-import static net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.*;
 
 public class OverrideBothEqualsAndHashcodeRule extends AbstractKotlinRule {
 
