@@ -18,7 +18,7 @@ import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtKotlinFile;
 /**
  * Minimal test that parses a Kotlin snippet and asserts generated token accessors
  * which call getToken/getTokens return expected terminal nodes.
- *
+ * <p>
  * This is to show a bug where antlr4.BaseAntlrTerminalNode#getTokenKind() returns index instead of type (aka kind).
  */
 class KotlinParserTokenAccessTest {
