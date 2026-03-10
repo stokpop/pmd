@@ -130,15 +130,15 @@ classBody
 
 classMemberDeclaration
     : (
-        classDeclaration
-        | functionDeclaration
-        | objectDeclaration
-        | companionObject
-        | propertyDeclaration
-        | anonymousInitializer
-        | secondaryConstructor
-        | typeAlias
-    ) anysemi+
+         classDeclaration
+         | functionDeclaration
+         | objectDeclaration
+         | companionObject
+         | propertyDeclaration
+         | anonymousInitializer
+         | secondaryConstructor
+         | typeAlias
+    ) anysemi*
     ;
 
 anonymousInitializer
