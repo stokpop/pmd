@@ -371,6 +371,7 @@ public static Foo getFoo() {
             When you use lambdas, this also allows you to write more concise code,
             e.g. `new Thread(() -> System.out.println("Hello!")).start();`.
         </description>
+        <priority>3</priority>
         <properties>
             <property name="xpath">
                 <value>
@@ -381,6 +382,25 @@ public static Foo getFoo() {
                 </value>
             </property>
         </properties>
+        <example>
+<![CDATA[
+public class GreetingThread extends Thread {
+    @Override
+    public void run() {
+        System.out.println("Hello!");
+    }
+}
+new GreetingThread().start(); // not recommended, use Runnable instead
+
+public class GreetingRunnable implements Runnable {
+    @Override
+    public void run() {
+        System.out.println("Hello!");
+    }
+}
+new Thread(new GreetingRunnable()).start(); // preferred
+]]>
+        </example>
     </rule>
     <rule name="UnsynchronizedStaticFormatter"
           language="java"
