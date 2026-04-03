@@ -9,6 +9,50 @@
 Rules which enforce generally accepted best practices.
     </description>
 
+    <rule name="AvoidRecompilingPatterns"
+          language="kotlin"
+          since="7.x"
+          message="Pattern.compile() is called inside a function body. Compile the pattern once as a constant or field."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#avoidrecompilingpatterns">
+        <description>
+            Compiling a regular expression pattern on every method call is expensive.
+            Assign the compiled Pattern to a companion object constant or class field so it is
+            compiled only once and shared safely (java.util.Pattern is thread-safe).
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//FunctionBody//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.util.regex.Pattern
+
+class Bad {
+    fun isValid(input: String): Boolean {
+        val p = Pattern.compile("[A-Z][a-z]+") // violation: compiled every call
+        return p.matcher(input).matches()
+    }
+}
+
+class Good {
+    companion object {
+        private val WORD_PATTERN = Pattern.compile("[A-Z][a-z]+") // ok: compiled once
+    }
+
+    fun isValid(input: String): Boolean = WORD_PATTERN.matcher(input).matches()
+}
+        ]]></example>
+    </rule>
+
     <rule name="FunctionNameTooShort"
           since="7.0.0"
           language="kotlin"
@@ -34,4 +78,5 @@ fun calculateLayout() // no violation
 ]]>
         </example>
     </rule>
+
 </ruleset>
