@@ -132,18 +132,30 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         if (v == null) {
             // Designer / single-file mode: launchAnalysis() was never called, so run
             // kotlin-type-mapper inline on this one file.
-            v = runSingleFileAnalysis(absPath, sourceText);
-        }
-        if (v != null) {
+            String effectiveName = sanitizeKtFilename(absPath);
+            v = runSingleFileAnalysis(effectiveName, sourceText);
+            if (v != null) {
+                v.annotate(root, effectiveName);
+            }
+        } else {
             v.annotate(root, absPath);
         }
     }
 
-    private KotlinTypeAnnotationVisitor runSingleFileAnalysis(String absPath, String sourceText) {
+    /**
+     * Returns a valid {@code .kt} filename derived from {@code absPath}.
+     * Falls back to {@code "snippet.kt"} when the path is synthetic (e.g. the
+     * Designer's {@code "(unknown)"}) or has no {@code .kt} extension.
+     */
+    static String sanitizeKtFilename(String absPath) {
+        String name = new File(absPath).getName();
+        return name.endsWith(".kt") ? name : "snippet.kt";
+    }
+
+    private KotlinTypeAnnotationVisitor runSingleFileAnalysis(String filename, String sourceText) {
         File tempDir = null;
         try {
             tempDir = Files.createTempDirectory("pmd-kotlin-analysis-").toFile();
-            String filename = new File(absPath).getName();
             Files.write(new File(tempDir, filename).toPath(),
                         sourceText.getBytes(StandardCharsets.UTF_8));
             TypedAst ast = new KotlinTypeMapper(tempDir, new ArrayList<>(), false).analyze();
@@ -152,7 +164,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             LOG.debug("kotlin-type-mapper single-file analysis complete for {}", filename);
             return new KotlinTypeAnnotationVisitor(ast);
         } catch (Exception e) {
-            LOG.warn("kotlin-type-mapper single-file analysis failed for {}; typeIs/matchesSig will return false", absPath, e);
+            LOG.warn("kotlin-type-mapper single-file analysis failed for {}; typeIs/matchesSig will return false", filename, e);
             return null;
         } finally {
             if (tempDir != null) {

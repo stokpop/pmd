@@ -31,7 +31,8 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
 
     /**
      * Returns the resolved type name for a {@code PropertyDeclaration} node, or {@code null}
-     * if type analysis has not been run. Exposed as XPath attribute {@code @TypeName}.
+     * if type analysis has not been run or this node is not a property declaration.
+     * Exposed as XPath attribute {@code @TypeName}.
      */
     default @Nullable String getTypeName() {
         return getUserMap().get(TYPE_NAME_KEY);
@@ -39,8 +40,8 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
 
     /**
      * Returns the resolved return type name for a {@code FunctionDeclaration} node, or
-     * {@code null} if type analysis has not been run. Exposed as XPath attribute
-     * {@code @ReturnTypeName}.
+     * {@code null} if type analysis has not been run or this node is not a function declaration.
+     * Exposed as XPath attribute {@code @ReturnTypeName}.
      */
     default @Nullable String getReturnTypeName() {
         return getUserMap().get(RETURN_TYPE_KEY);
