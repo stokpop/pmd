@@ -165,7 +165,8 @@ return `false` for all nodes (no false positives, no analysis).
 - Requires pre-computed type analysis. Without it, both functions return `false` (safe default).
 - Analysis is based on kotlin-type-mapper's K1 PSI; line numbers may differ by ±1 from PMD's
   ANTLR parser for some property declarations. A ±1 fallback is applied automatically.
-- Only `PropertyDeclaration` and `FunctionDeclaration` are supported by `typeIs`. Local
-  variables inside function bodies are not yet indexed.
+- `typeIs` works on both class-level and local (function-body) `PropertyDeclaration` nodes,
+  as well as `FunctionDeclaration` nodes. Kotlin uses the same grammar rule for both, and
+  kotlin-type-mapper indexes all `KtProperty` nodes regardless of scope.
 - Generic type arguments are supported in signatures (e.g. `kotlin.collections.List<kotlin.String>`),
   but omitting the type argument matches the raw (erased) type.
