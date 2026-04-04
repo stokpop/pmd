@@ -81,13 +81,24 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
                 if (contextNode == null) {
                     return false;
                 }
-                String sig     = (String) arguments[0];
-                String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
-                int    line    = contextNode.getBeginLine();
+                String sig        = (String) arguments[0];
+                String absPath    = contextNode.getTextDocument().getFileId().getAbsolutePath();
+                int    beginLine  = contextNode.getBeginLine();
+                int    beginCol   = contextNode.getBeginColumn();
+                int    endCol     = contextNode.getEndColumn();
 
                 KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-                List<CallSiteAst> calls = ctx.callSitesAt(absPath, line);
+                List<CallSiteAst> calls = ctx.callSitesAt(absPath, beginLine);
                 for (CallSiteAst call : calls) {
+                    // When the call site is on the exact same line, require its column
+                    // to fall within the node's column span.  This prevents sibling nodes
+                    // on the same line (e.g. string-literal arguments) from also matching.
+                    if (call.getLine() == beginLine) {
+                        int col = call.getColumn();
+                        if (col < beginCol || col > endCol) {
+                            continue;
+                        }
+                    }
                     if (SignatureMatcherKt.matchesSigEquivalent(call, sig)) {
                         return true;
                     }

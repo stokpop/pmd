@@ -123,6 +123,34 @@ class KotlinMatchesSigFunctionTest {
                 "Expected violation at line 3 (items.size with wildcard receiver)");
     }
 
+    @Test
+    void matchesSigPatternCompileOnlyMatchesCallNotArgument() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PatternCompileUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // Pattern.compile("[a-z]+") on line 5 should match
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 5),
+                "Expected violation at line 5 (Pattern.compile call)");
+        // The string literal argument "[a-z]+" is also on line 5 but should NOT produce a
+        // separate match — it should not be reported as a PostfixUnaryExpression hit
+        assertEquals(1, report.getViolations().stream().filter(v -> v.getBeginLine() == 5).count(),
+                "Expected exactly one violation on line 5, not two (call + argument)");
+    }
+
+    @Test
+    void matchesSigPatternCompileDoesNotMatchUnrelatedCall() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PatternCompileUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // noCompile() body has no Pattern.compile — line 10 should not match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 10),
+                "Did not expect violation at line 10 (no Pattern.compile there)");
+    }
+
     private Report runXPath(String xpathExpr, File kotlinFile) {
         PMDConfiguration config = new PMDConfiguration();
         config.setIgnoreIncrementalAnalysis(true);
