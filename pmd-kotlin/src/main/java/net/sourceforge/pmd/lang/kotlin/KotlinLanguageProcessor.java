@@ -15,6 +15,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.sourceforge.pmd.lang.JvmLanguagePropertyBundle;
 import net.sourceforge.pmd.lang.LanguagePropertyBundle;
 import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Parser;
@@ -56,10 +57,12 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
     private volatile KotlinTypeAnnotationVisitor annotationVisitor = null;
 
     private final KotlinHandler baseHandler;
+    private final JvmLanguagePropertyBundle jvmBundle;
 
-    KotlinLanguageProcessor(LanguagePropertyBundle bundle, KotlinHandler handler) {
+    KotlinLanguageProcessor(JvmLanguagePropertyBundle bundle, KotlinHandler handler) {
         super(bundle);
         this.baseHandler = handler;
+        this.jvmBundle = bundle;
     }
 
     @Override
@@ -91,7 +94,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             tempDir = Files.createTempDirectory("pmd-kotlin-analysis-").toFile();
             writeToTempDir(ktFiles, tempDir);
 
-            TypedAst ast = new KotlinTypeMapper(tempDir, new ArrayList<>(), false).analyze();
+            TypedAst ast = new KotlinTypeMapper(tempDir, getAuxClasspathEntries(), false).analyze();
             KotlinTypeAnalysisContext context = KotlinTypeAnalysisContext.from(ast);
             KotlinTypeAnalysisContextHolder.setGlobal(context);
             annotationVisitor = new KotlinTypeAnnotationVisitor(ast);
@@ -113,6 +116,27 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             Files.write(new File(tempDir, filename).toPath(),
                         text.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    /**
+     * Returns the auxiliary classpath entries configured for this analysis as a list
+     * of File objects, forwarded to kotlin-type-mapper so it can resolve external types
+     * (e.g. Spring, JPA annotations).
+     */
+    private List<File> getAuxClasspathEntries() {
+        String raw = jvmBundle.getProperty(JvmLanguagePropertyBundle.AUX_CLASSPATH);
+        if (raw == null || raw.isEmpty()) {
+            return new ArrayList<>();
+        }
+        String sep = System.getProperty("path.separator", ":");
+        List<File> entries = new ArrayList<>();
+        for (String entry : raw.split(java.util.regex.Pattern.quote(sep))) {
+            String trimmed = entry.trim();
+            if (!trimmed.isEmpty()) {
+                entries.add(new File(trimmed));
+            }
+        }
+        return entries;
     }
 
     private static void deleteRecursively(File file) {
@@ -158,7 +182,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             tempDir = Files.createTempDirectory("pmd-kotlin-analysis-").toFile();
             Files.write(new File(tempDir, filename).toPath(),
                         sourceText.getBytes(StandardCharsets.UTF_8));
-            TypedAst ast = new KotlinTypeMapper(tempDir, new ArrayList<>(), false).analyze();
+            TypedAst ast = new KotlinTypeMapper(tempDir, getAuxClasspathEntries(), false).analyze();
             KotlinTypeAnalysisContext context = KotlinTypeAnalysisContext.from(ast);
             KotlinTypeAnalysisContextHolder.setGlobal(context);
             LOG.debug("kotlin-type-mapper single-file analysis complete for {}", filename);

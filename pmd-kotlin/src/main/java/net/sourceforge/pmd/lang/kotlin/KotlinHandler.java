@@ -7,6 +7,7 @@ package net.sourceforge.pmd.lang.kotlin;
 import net.sourceforge.pmd.lang.AbstractPmdLanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Parser;
 import net.sourceforge.pmd.lang.kotlin.ast.PmdKotlinParser;
+import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinHasAnnotationFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinMatchesSigFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinTypeIsFunction;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathHandler;
@@ -20,7 +21,8 @@ public class KotlinHandler extends AbstractPmdLanguageVersionHandler {
         static final XPathHandler HANDLER =
                 XPathHandler.getHandlerForFunctionDefs(
                         KotlinTypeIsFunction.INSTANCE,
-                        KotlinMatchesSigFunction.INSTANCE);
+                        KotlinMatchesSigFunction.INSTANCE,
+                        KotlinHasAnnotationFunction.INSTANCE);
     }
 
     @Override

@@ -4,6 +4,10 @@
 
 package net.sourceforge.pmd.lang.kotlin.ast;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.impl.antlr4.AntlrNode;
@@ -30,8 +34,34 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
     SimpleDataKey<String> RETURN_TYPE_KEY = DataMap.simpleDataKey("kotlin.returnTypeName");
 
     /**
-     * Returns the resolved type name for a {@code PropertyDeclaration} node, or {@code null}
-     * if type analysis has not been run or this node is not a property declaration.
+     * DataMap key for the FQN annotation names on a declaration node
+     * (property, function, class). Stored as a comma-separated string of
+     * fully-qualified class names, e.g.
+     * {@code "javax.persistence.Entity,javax.persistence.Table"}.
+     * Populated by the type annotation pass when kotlin-type-mapper analysis is available.
+     */
+    SimpleDataKey<String> ANNOTATION_NAMES_KEY = DataMap.simpleDataKey("kotlin.annotationNames");
+
+    /**
+     * Returns an unmodifiable list of fully-qualified annotation class names
+     * for this declaration node, or an empty list if none are present or type
+     * analysis has not been run.
+     * <p>Used by {@code pmd-kotlin:hasAnnotation()}; not exposed as an XPath
+     * attribute to avoid noise on all non-declaration nodes in the Designer.
+     */
+    default List<String> getAnnotationFqNames() {
+        String stored = getUserMap().get(ANNOTATION_NAMES_KEY);
+        if (stored == null || stored.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(Arrays.asList(stored.split(",")));
+    }
+
+    /**
+     * Returns the resolved type name for a {@code PropertyDeclaration} node (the property type),
+     * for a {@code FunctionDeclaration} node (the return type), or for a
+     * {@code KtUnescapedAnnotation} node (the annotation class FQN).
+     * Returns {@code null} on all other nodes or when type analysis has not been run.
      * Exposed as XPath attribute {@code @TypeName}.
      */
     default @Nullable String getTypeName() {
