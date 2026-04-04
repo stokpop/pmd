@@ -52,14 +52,23 @@ public final class KotlinTypeAnalysisContext {
         String sourceRoot = ast.getSourceRoot();
         for (FileAst file : ast.getFiles()) {
             String absPath = canonicalize(sourceRoot + File.separator + file.getRelativePath());
+            // Also index by basename alone as a fallback for when PMD paths differ
+            // from the paths kotlin-type-mapper was run on (e.g. temp dir analysis).
+            String basename = new File(file.getRelativePath()).getName();
 
             for (CallSiteAst call : file.getCalls()) {
                 callIdx.computeIfAbsent(absPath, k -> new HashMap<>())
                        .computeIfAbsent(call.getLine(), k -> new ArrayList<>())
                        .add(call);
+                callIdx.computeIfAbsent(basename, k -> new HashMap<>())
+                       .computeIfAbsent(call.getLine(), k -> new ArrayList<>())
+                       .add(call);
             }
             for (DeclarationAst decl : file.getDeclarations()) {
                 declIdx.computeIfAbsent(absPath, k -> new HashMap<>())
+                       .computeIfAbsent(decl.getLine(), k -> new ArrayList<>())
+                       .add(decl);
+                declIdx.computeIfAbsent(basename, k -> new HashMap<>())
                        .computeIfAbsent(decl.getLine(), k -> new ArrayList<>())
                        .add(decl);
             }
@@ -74,6 +83,10 @@ public final class KotlinTypeAnalysisContext {
      */
     public List<CallSiteAst> callSitesAt(String absFilePath, int line) {
         Map<Integer, List<CallSiteAst>> byLine = callIndex.get(absFilePath);
+        if (byLine == null) {
+            // Fallback: try just the filename in case context was built from a different root
+            byLine = callIndex.get(new File(absFilePath).getName());
+        }
         if (byLine == null) {
             return Collections.emptyList();
         }
@@ -100,6 +113,9 @@ public final class KotlinTypeAnalysisContext {
      */
     public List<DeclarationAst> declarationsAt(String absFilePath, int line) {
         Map<Integer, List<DeclarationAst>> byLine = declIndex.get(absFilePath);
+        if (byLine == null) {
+            byLine = declIndex.get(new File(absFilePath).getName());
+        }
         if (byLine == null) {
             return Collections.emptyList();
         }
