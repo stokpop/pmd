@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.lang.kotlin;
 
 import net.sourceforge.pmd.cpd.CpdLexer;
+import net.sourceforge.pmd.lang.LanguageProcessor;
 import net.sourceforge.pmd.lang.LanguagePropertyBundle;
 import net.sourceforge.pmd.lang.LanguageRegistry;
 import net.sourceforge.pmd.lang.impl.SimpleLanguageModuleBase;
@@ -28,6 +29,11 @@ public class KotlinLanguageModule extends SimpleLanguageModuleBase {
 
     public static KotlinLanguageModule getInstance() {
         return (KotlinLanguageModule) LanguageRegistry.PMD.getLanguageById(ID);
+    }
+
+    @Override
+    public LanguageProcessor createProcessor(LanguagePropertyBundle bundle) {
+        return new KotlinLanguageProcessor(bundle, new KotlinHandler());
     }
 
     @Override

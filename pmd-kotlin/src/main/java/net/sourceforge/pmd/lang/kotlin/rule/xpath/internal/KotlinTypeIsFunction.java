@@ -9,6 +9,7 @@ import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionDefinition;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
 
@@ -68,6 +69,21 @@ public final class KotlinTypeIsFunction extends BaseKotlinXPathFunction {
                 String typeName = (String) arguments[0];
                 String absPath  = contextNode.getTextDocument().getFileId().getAbsolutePath();
                 int    line     = contextNode.getBeginLine();
+
+                // Fast path: use node attributes set by KotlinLanguageProcessor annotation pass.
+                // These are populated automatically when running via PMD CLI or Designer.
+                if (contextNode instanceof KotlinNode) {
+                    KotlinNode kn = (KotlinNode) contextNode;
+                    KotlinTypeAnalysisContext nodeCtx = KotlinTypeAnalysisContextHolder.get();
+                    String nodeType = kn.getTypeName();
+                    if (nodeType != null) {
+                        return nodeCtx.isTypeEquivalent(typeName, nodeType);
+                    }
+                    String nodeReturnType = kn.getReturnTypeName();
+                    if (nodeReturnType != null) {
+                        return nodeCtx.isTypeEquivalent(typeName, nodeReturnType);
+                    }
+                }
 
                 KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
 
