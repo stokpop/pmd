@@ -92,4 +92,18 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
     default @Nullable String getModifiers() {
         return null;
     }
+
+    /**
+     * Returns the text of the first {@code SimpleIdentifier} direct child of this node,
+     * or {@code null} if there is none. This makes it easy to write XPath expressions
+     * like {@code //ClassDeclaration[@Identifier='Foo']} instead of the longer
+     * {@code //ClassDeclaration/SimpleIdentifier/T-Identifier[@Text='Foo']}.
+     * Exposed as XPath attribute {@code @Identifier}.
+     *
+     * <p>Visible in the PMD Designer only on nodes that have a SimpleIdentifier child.
+     * Implemented in {@link KotlinInnerNode}; returns {@code null} by default.
+     */
+    default @Nullable String getIdentifier() {
+        return null;
+    }
 }

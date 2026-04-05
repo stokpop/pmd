@@ -73,6 +73,28 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
         return null;
     }
 
+    /**
+     * Returns the text of the first {@code SimpleIdentifier} direct child,
+     * or {@code null} if none is present.
+     */
+    @Override
+    public @Nullable String getIdentifier() {
+        for (int i = 0; i < getNumChildren(); i++) {
+            KotlinNode child = getChild(i);
+            if (child instanceof KotlinParser.KtSimpleIdentifier) {
+                // KtSimpleIdentifier wraps a single terminal token
+                KotlinParser.KtSimpleIdentifier si = (KotlinParser.KtSimpleIdentifier) child;
+                if (si.getNumChildren() > 0) {
+                    KotlinNode token = si.getChild(0);
+                    if (token instanceof KotlinTerminalNode) {
+                        return ((KotlinTerminalNode) token).getText();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private static @Nullable String firstModifierKeyword(KotlinNode node) {
         if (node instanceof KotlinTerminalNode) {
             return ((KotlinTerminalNode) node).getText();

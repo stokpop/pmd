@@ -35,6 +35,7 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
      *   <li>Inner nodes with {@code @TypeName} set: shows the resolved type name.</li>
      *   <li>Inner nodes with {@code @ReturnTypeName} set (e.g. {@code FunctionDeclaration}):
      *       shows the return type name.</li>
+     *   <li>Inner nodes with {@code @Identifier} set: shows the identifier name.</li>
      *   <li>Otherwise: falls back to the default (image-based) behaviour.</li>
      * </ul>
      */
@@ -55,6 +56,10 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
             String returnTypeName = kNode.getReturnTypeName();
             if (returnTypeName != null) {
                 return new Attribute(node, "ReturnTypeName", returnTypeName);
+            }
+            String identifier = kNode.getIdentifier();
+            if (identifier != null) {
+                return new Attribute(node, "Identifier", identifier);
             }
         }
         return super.getMainAttribute(node);
