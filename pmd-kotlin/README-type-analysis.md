@@ -282,6 +282,47 @@ void tearDown() {
 - Generic type arguments are supported in signatures (e.g. `kotlin.collections.List<kotlin.String>`),
   but omitting the type argument matches the raw (erased) type.
 
+---
+
+## Design Notes
+
+### Type resolution: K1 compiler, not import heuristics
+
+All type names exposed on PMD nodes (`@TypeName`, `@ReturnTypeName`) and used by `typeIs` /
+`typeIsExactly` are **resolved FQNs produced by the Kotlin K1 compiler** inside kotlin-type-mapper,
+not guessed from import statements. This means:
+
+- A `PropertyDeclaration` node whose `@TypeName` is set carries the real FQN as the compiler
+  sees it — e.g. `nl.stokpop.kotlin.Simple`, not the bare source name `Simple`.
+- If `@TypeName` is absent, it means analysis did not produce a result for that node
+  (e.g. a compilation error, or a node type not yet handled). The XPath functions return
+  `false` in this case — **no false positives, but potentially false negatives**.
+- Import-based fallback guessing was deliberately **not** implemented. Guessing FQNs from
+  imports can produce false positives when multiple classes share a simple name, and it
+  would be misleading to show a guessed type in the PMD Designer while `typeIs` on the same
+  node still returns `false`. The K1 compiler already handles all normal import resolution
+  correctly; if a type is missing it points to a gap in the analyzer, not a need for heuristics.
+
+### `*` prefix convention (vs Java)
+
+In the Java module the PMD Designer shows `Type: *SomeClass` when Java's type system has an
+**unresolved** symbol for a node — the class was referenced but not found on the aux classpath.
+Kotlin does not use this convention: if kotlin-type-mapper could not resolve a type, the
+`@TypeName` attribute is simply absent rather than present with a `*` marker. The effect is
+the same (the Designer shows nothing for unresolved types) but the representation differs.
+
+### `typeIs` vs `typeIsExactly`
+
+Mirrors the split in `pmd-java`:
+
+| Function | Matches |
+|---|---|
+| `pmd-kotlin:typeIs('X')` | X and all subtypes (BFS over `typeHierarchy`, requires compiled classes on auxClasspath) |
+| `pmd-kotlin:typeIsExactly('X')` | X only, no hierarchy walk |
+
+When the aux classpath is not set, `typeIs` falls back to exact matching because the
+`typeHierarchy` map is empty — behaviour is identical to `typeIsExactly` in that case.
+
 
 `pmd-kotlin` provides two custom XPath functions that let rules check the **resolved types and
 call signatures** of Kotlin code, analogous to `pmd-java:typeIs` and `pmd-java:matchesSig` in
