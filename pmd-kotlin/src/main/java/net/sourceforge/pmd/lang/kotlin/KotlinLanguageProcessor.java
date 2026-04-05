@@ -122,21 +122,41 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
      * Returns the auxiliary classpath entries configured for this analysis as a list
      * of File objects, forwarded to kotlin-type-mapper so it can resolve external types
      * (e.g. Spring, JPA annotations).
+     *
+     * <p>Checks the string property first (command-line / rule property), then falls
+     * back to extracting file URLs from the analysis {@link ClassLoader} — which is
+     * how the PMD Designer propagates the auxiliary classpath.
      */
     private List<File> getAuxClasspathEntries() {
+        // 1. String property (e.g. set via --aux-classpath on the command line)
         String raw = jvmBundle.getProperty(JvmLanguagePropertyBundle.AUX_CLASSPATH);
-        if (raw == null || raw.isEmpty()) {
-            return new ArrayList<>();
-        }
-        String sep = System.getProperty("path.separator", ":");
-        List<File> entries = new ArrayList<>();
-        for (String entry : raw.split(java.util.regex.Pattern.quote(sep))) {
-            String trimmed = entry.trim();
-            if (!trimmed.isEmpty()) {
-                entries.add(new File(trimmed));
+        if (raw != null && !raw.isEmpty()) {
+            String sep = System.getProperty("path.separator", ":");
+            List<File> entries = new ArrayList<>();
+            for (String entry : raw.split(java.util.regex.Pattern.quote(sep))) {
+                String trimmed = entry.trim();
+                if (!trimmed.isEmpty()) {
+                    entries.add(new File(trimmed));
+                }
             }
+            return entries;
         }
-        return entries;
+        // 2. ClassLoader (set by PmdAnalysis / Designer via JvmLanguagePropertyBundle.setClassLoader)
+        ClassLoader cl = jvmBundle.getAnalysisClassLoader();
+        if (cl instanceof java.net.URLClassLoader) {
+            List<File> entries = new ArrayList<>();
+            for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
+                if ("file".equals(url.getProtocol())) {
+                    try {
+                        entries.add(new File(url.toURI()));
+                    } catch (Exception e) {
+                        LOG.debug("Could not convert classpath URL to File: {}", url);
+                    }
+                }
+            }
+            return entries;
+        }
+        return new ArrayList<>();
     }
 
     private static void deleteRecursively(File file) {
