@@ -30,8 +30,11 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
 
     /**
      * Returns the "main" attribute shown inline next to the node name in the Designer tree.
-     * For T- terminal nodes this is {@code @Text} — the token text.
-     * For other nodes, falls back to the default (image-based) behaviour.
+     * <ul>
+     *   <li>T- terminal nodes: {@code @Text} — the token text.</li>
+     *   <li>Inner nodes with {@code @TypeName} set: shows the resolved type name.</li>
+     *   <li>Otherwise: falls back to the default (image-based) behaviour.</li>
+     * </ul>
      */
     @Override
     public Attribute getMainAttribute(Node node) {
@@ -39,6 +42,12 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
             String text = ((KotlinTerminalNode) node).getText();
             if (text != null && !text.isEmpty()) {
                 return new Attribute(node, "Text", text);
+            }
+        }
+        if (node instanceof KotlinNode) {
+            String typeName = ((KotlinNode) node).getTypeName();
+            if (typeName != null) {
+                return new Attribute(node, "TypeName", typeName);
             }
         }
         return super.getMainAttribute(node);
