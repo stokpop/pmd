@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
+import net.sourceforge.pmd.lang.kotlin.ast.KotlinTerminalNode;
+import net.sourceforge.pmd.lang.rule.xpath.Attribute;
 import net.sourceforge.pmd.util.designerbindings.DesignerBindings.DefaultDesignerBindings;
 
 /**
@@ -24,6 +26,22 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
     public static final KotlinDesignerBindings INSTANCE = new KotlinDesignerBindings();
 
     private KotlinDesignerBindings() {
+    }
+
+    /**
+     * Returns the "main" attribute shown inline next to the node name in the Designer tree.
+     * For T- terminal nodes this is {@code @Text} — the token text.
+     * For other nodes, falls back to the default (image-based) behaviour.
+     */
+    @Override
+    public Attribute getMainAttribute(Node node) {
+        if (node instanceof KotlinTerminalNode) {
+            String text = ((KotlinTerminalNode) node).getText();
+            if (text != null && !text.isEmpty()) {
+                return new Attribute(node, "Text", text);
+            }
+        }
+        return super.getMainAttribute(node);
     }
 
     @Override
