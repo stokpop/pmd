@@ -11,6 +11,7 @@ import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.impl.antlr4.AntlrNode;
+import net.sourceforge.pmd.lang.rule.xpath.NoAttribute;
 import net.sourceforge.pmd.util.DataMap;
 import net.sourceforge.pmd.util.DataMap.SimpleDataKey;
 
@@ -49,6 +50,7 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
      * <p>Used by {@code pmd-kotlin:hasAnnotation()}; not exposed as an XPath
      * attribute to avoid noise on all non-declaration nodes in the Designer.
      */
+    @NoAttribute
     default List<String> getAnnotationFqNames() {
         String stored = getUserMap().get(ANNOTATION_NAMES_KEY);
         if (stored == null || stored.isEmpty()) {
