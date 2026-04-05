@@ -178,6 +178,25 @@ for simple structural checks, but Java rules are preferable for complex logic.
 `KotlinTypeAnalysisContext` is obtained via `KotlinTypeAnalysisContextHolder.get()`.
 It may return `null` if type analysis was not run (no aux classpath) — always null-check it.
 
+### Why a ContextHolder? (comparison with Java PMD)
+
+In **Java PMD**, type resolution is built into the core analysis pass: each `TypeNode` already
+carries a `JTypeMirror` populated by PMD's own Java type resolver. `TypeTestUtil.isA(node)`
+just reads that mirror — no external context is needed.
+
+In **Kotlin PMD**, the ANTLR-based AST has no built-in type resolver. Type data comes from a
+separate pre-analysis step run by `kotlin-type-mapper` (using the Kotlin K1 compiler). The
+result is stored in a JSON file and loaded once at PMD startup into `KotlinTypeAnalysisContext`.
+
+Because PMD's plugin architecture does not give XPath functions a channel for injected
+dependencies, a global/thread-local singleton (`KotlinTypeAnalysisContextHolder`) is used to
+share the context — the same pattern as Spring's `SecurityContextHolder`. Thread-local override
+support makes test isolation clean.
+
+A deeper integration (storing context in `LanguageVersionHandler` or `RuleContext`) would be
+cleaner but would require changes to PMD core. The `ContextHolder` is a pragmatic solution
+that works reliably for both XPath and Java rules.
+
 ### Example: Java rule checking parameter type
 
 The following rule detects method parameters of type `java.util.Calendar` (and subtypes),
