@@ -17,30 +17,28 @@ import nl.stokpop.typemapper.model.CallSiteAst;
 import nl.stokpop.typemapper.model.DeclarationAst;
 
 /**
- * XPath function {@code pmd-kotlin:typeIs(typeName)}.
+ * XPath function {@code pmd-kotlin:typeIsExactly(typeName)}.
  *
  * <p>Returns {@code true} when the context node's declared type (for property/variable
- * declarations) or return type (for function declarations) is equivalent to, or a
- * <em>subtype</em> of, {@code typeName}. Both Java FQCNs and Kotlin FQNs are accepted.
+ * declarations) or return type (for function declarations) is <em>exactly</em> equivalent
+ * to {@code typeName} — no subtype checking is performed.
+ * Both Java FQCNs and Kotlin FQNs are accepted (e.g. {@code java.lang.String} ↔
+ * {@code kotlin.String}).
  *
- * <p>Subtype checking uses the type hierarchy built by kotlin-type-mapper via reflection.
- * This requires the project's compiled classes (and their dependencies) to be on the
- * {@code auxClasspath}. Without classpath, the function falls back to exact-name matching.
- *
- * <p>For exact-type matching only, use {@code pmd-kotlin:typeIsExactly(typeName)}.
+ * <p>Use {@code pmd-kotlin:typeIs(typeName)} when subtype matches should also be included.
  *
  * <p>Example XPath:
  * <pre>{@code
- * //PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]   -- matches subtypes too
- * //FunctionDeclaration[pmd-kotlin:typeIs('kotlin.String')]
+ * //PropertyDeclaration[pmd-kotlin:typeIsExactly('java.util.Calendar')]
+ * //FunctionDeclaration[pmd-kotlin:typeIsExactly('kotlin.String')]
  * }</pre>
  */
-public final class KotlinTypeIsFunction extends BaseKotlinXPathFunction {
+public final class KotlinTypeIsExactlyFunction extends BaseKotlinXPathFunction {
 
-    public static final KotlinTypeIsFunction INSTANCE = new KotlinTypeIsFunction();
+    public static final KotlinTypeIsExactlyFunction INSTANCE = new KotlinTypeIsExactlyFunction();
 
-    private KotlinTypeIsFunction() {
-        super("typeIs");
+    private KotlinTypeIsExactlyFunction() {
+        super("typeIsExactly");
     }
 
     @Override
@@ -70,40 +68,36 @@ public final class KotlinTypeIsFunction extends BaseKotlinXPathFunction {
                 String absPath  = contextNode.getTextDocument().getFileId().getAbsolutePath();
                 int    line     = contextNode.getBeginLine();
 
-                // Fast path: use node attributes set by KotlinLanguageProcessor annotation pass.
-                // These are populated automatically when running via PMD CLI or Designer.
+                KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
+
+                // Fast path: use node attributes set by the annotation pass.
                 if (contextNode instanceof KotlinNode) {
                     KotlinNode kn = (KotlinNode) contextNode;
-                    KotlinTypeAnalysisContext nodeCtx = KotlinTypeAnalysisContextHolder.get();
                     String nodeType = kn.getTypeName();
                     if (nodeType != null) {
-                        return nodeCtx.isSubtypeOf(typeName, nodeType);
+                        return ctx.isTypeEquivalent(typeName, nodeType);
                     }
                     String nodeReturnType = kn.getReturnTypeName();
                     if (nodeReturnType != null) {
-                        return nodeCtx.isSubtypeOf(typeName, nodeReturnType);
+                        return ctx.isTypeEquivalent(typeName, nodeReturnType);
                     }
                 }
 
-                KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-
-                // Check declarations at this position (properties → type, functions → returnType)
                 List<DeclarationAst> decls = ctx.declarationsAt(absPath, line);
                 for (DeclarationAst decl : decls) {
                     String type = decl.getType();
-                    if (type != null && ctx.isSubtypeOf(typeName, type)) {
+                    if (type != null && ctx.isTypeEquivalent(typeName, type)) {
                         return true;
                     }
                     String returnType = decl.getReturnType();
-                    if (returnType != null && ctx.isSubtypeOf(typeName, returnType)) {
+                    if (returnType != null && ctx.isTypeEquivalent(typeName, returnType)) {
                         return true;
                     }
                 }
 
-                // Fallback: check call-site return type (for expression nodes)
                 List<CallSiteAst> calls = ctx.callSitesAt(absPath, line);
                 for (CallSiteAst call : calls) {
-                    if (ctx.isSubtypeOf(typeName, call.getReturnType())) {
+                    if (ctx.isTypeEquivalent(typeName, call.getReturnType())) {
                         return true;
                     }
                 }

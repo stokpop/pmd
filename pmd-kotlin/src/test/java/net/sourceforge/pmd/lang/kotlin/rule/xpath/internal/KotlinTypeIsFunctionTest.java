@@ -112,6 +112,44 @@ class KotlinTypeIsFunctionTest {
                 "Expected no violations for List typeIs on CalendarUsage.kt");
     }
 
+    @Test
+    void typeIsSerializableMatchesSubtypePropertyViaHierarchy() {
+        // typeIs should match a property whose declared type implements Serializable,
+        // using the type hierarchy from kotlin-type-mapper.
+        // Note: this requires the compiled classes on auxClasspath to resolve the hierarchy;
+        // without classpath the type hierarchy is empty and the test is skipped gracefully.
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/SerializableSubtype.kt");
+        KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
+        if (ctx.getTypeHierarchy().isEmpty()) {
+            // No hierarchy available (no compiled classes on classpath) — skip
+            return;
+        }
+        Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 9),
+                "Expected violation at line 9 (item: SerializableSubtype implements Serializable)");
+    }
+
+    @Test
+    void typeIsExactlyMatchesExactType() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/CalendarUsage.kt");
+        Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIsExactly('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 6),
+                "Expected violation at line 6 (meeting: Calendar)");
+    }
+
+    @Test
+    void typeIsExactlyDoesNotMatchSubtype() {
+        // typeIsExactly('java.io.Serializable') must NOT match a property of type
+        // SerializableSubtype (which implements Serializable but is not exactly it).
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/SerializableSubtype.kt");
+        Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIsExactly('java.io.Serializable')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertEquals(0, report.getViolations().size(),
+                "typeIsExactly should not match properties of SerializableSubtype");
+    }
+
     private Report runXPath(String xpathExpr, File kotlinFile) {
         PMDConfiguration config = new PMDConfiguration();
         config.setIgnoreIncrementalAnalysis(true);

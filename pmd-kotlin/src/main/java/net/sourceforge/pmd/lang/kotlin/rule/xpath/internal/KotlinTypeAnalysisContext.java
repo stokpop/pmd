@@ -5,11 +5,14 @@
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import nl.stokpop.typemapper.model.CallSiteAst;
 import nl.stokpop.typemapper.model.DeclarationAst;
@@ -24,7 +27,7 @@ import nl.stokpop.typemapper.model.TypeNameUtilsKt;
 public final class KotlinTypeAnalysisContext {
 
     private static final KotlinTypeAnalysisContext EMPTY = new KotlinTypeAnalysisContext(
-            Collections.emptyMap(), Collections.emptyMap());
+            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
 
     /** Map from absolute file path → line → list of call sites on that line. */
     private final Map<String, Map<Integer, List<CallSiteAst>>> callIndex;
@@ -32,11 +35,20 @@ public final class KotlinTypeAnalysisContext {
     /** Map from absolute file path → line → list of declarations starting on that line. */
     private final Map<String, Map<Integer, List<DeclarationAst>>> declIndex;
 
+    /**
+     * Direct supertypes per Kotlin FQN (generics stripped), from {@link TypedAst#getTypeHierarchy()}.
+     * Key: raw type FQN. Value: list of direct supertype FQNs.
+     * Used by {@link #isSubtypeOf(String, String)} for hierarchy traversal.
+     */
+    private final Map<String, List<String>> typeHierarchy;
+
     private KotlinTypeAnalysisContext(
             Map<String, Map<Integer, List<CallSiteAst>>> callIndex,
-            Map<String, Map<Integer, List<DeclarationAst>>> declIndex) {
+            Map<String, Map<Integer, List<DeclarationAst>>> declIndex,
+            Map<String, List<String>> typeHierarchy) {
         this.callIndex = callIndex;
         this.declIndex = declIndex;
+        this.typeHierarchy = typeHierarchy;
     }
 
     /** Returns a no-op context (all lookups return empty lists). */
@@ -73,7 +85,7 @@ public final class KotlinTypeAnalysisContext {
                        .add(decl);
             }
         }
-        return new KotlinTypeAnalysisContext(callIdx, declIdx);
+        return new KotlinTypeAnalysisContext(callIdx, declIdx, ast.getTypeHierarchy());
     }
 
     /**
@@ -136,11 +148,66 @@ public final class KotlinTypeAnalysisContext {
     }
 
     /**
+     * Returns the type hierarchy map (Kotlin FQN → direct supertype FQNs).
+     * Primarily for testing; empty when no aux classpath was provided.
+     */
+    public Map<String, List<String>> getTypeHierarchy() {
+        return typeHierarchy;
+    }
+
+    /**
      * Returns true if {@code expected} and {@code actual} refer to the same type,
      * accounting for Java↔Kotlin name mapping (e.g. java.lang.String ↔ kotlin.String).
      */
     public boolean isTypeEquivalent(String expected, String actual) {
         return TypeNameUtilsKt.typeNamesEquivalent(expected, actual);
+    }
+
+    /**
+     * Returns true if {@code actualType} is the same as, or a (transitive) subtype of,
+     * {@code expectedType}. Uses the type hierarchy built by kotlin-type-mapper via reflection.
+     *
+     * <p>Both Java FQCNs and Kotlin FQNs are accepted for {@code expectedType}. Java↔Kotlin
+     * name equivalence is applied when comparing each type against {@code expectedType}.
+     *
+     * <p>Falls back to {@link #isTypeEquivalent} when no hierarchy data is available
+     * (i.e. the aux classpath was not set or the type could not be loaded).
+     */
+    public boolean isSubtypeOf(String expectedType, String actualType) {
+        // First: exact/mapped equivalence check.
+        if (isTypeEquivalent(expectedType, actualType)) {
+            return true;
+        }
+        if (typeHierarchy.isEmpty()) {
+            return false;
+        }
+        // BFS over transitive supertypes of actualType.
+        String rawActual = substringBeforeAngle(actualType);
+        Set<String> visited = new HashSet<>();
+        ArrayDeque<String> queue = new ArrayDeque<>();
+        queue.add(rawActual);
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+            if (!visited.add(current)) {
+                continue;
+            }
+            List<String> supers = typeHierarchy.get(current);
+            if (supers == null) {
+                continue;
+            }
+            for (String superType : supers) {
+                if (isTypeEquivalent(expectedType, superType)) {
+                    return true;
+                }
+                queue.add(substringBeforeAngle(superType));
+            }
+        }
+        return false;
+    }
+
+    private static String substringBeforeAngle(String s) {
+        int idx = s.indexOf('<');
+        return idx >= 0 ? s.substring(0, idx) : s;
     }
 
     private static String canonicalize(String path) {
