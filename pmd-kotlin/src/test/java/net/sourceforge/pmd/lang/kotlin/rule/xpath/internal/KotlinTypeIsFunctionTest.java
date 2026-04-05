@@ -152,6 +152,26 @@ class KotlinTypeIsFunctionTest {
     }
 
     @Test
+    void typeIsOnClassParameterMatches() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/PrimaryCtorParams.kt");
+        Report report = runXPath("//ClassParameter[pmd-kotlin:typeIs('kotlin.String')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // val value: String at line 10
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 10),
+                "Expected violation at line 10 (val value: String)");
+    }
+
+    @Test
+    void typeIsOnClassParameterNoMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/PrimaryCtorParams.kt");
+        Report report = runXPath("//ClassParameter[pmd-kotlin:typeIs('kotlin.String')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // val tag: Long at line 12 should NOT match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 12),
+                "Long ClassParameter should not match kotlin.String typeIs");
+    }
+
+    @Test
     void typeIsOnFunctionValueParameterMatches() {
         File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
         Report report = runXPath("//FunctionValueParameter[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);

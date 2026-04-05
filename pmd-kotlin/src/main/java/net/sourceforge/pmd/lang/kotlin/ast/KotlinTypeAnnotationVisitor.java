@@ -23,6 +23,8 @@ import nl.stokpop.typemapper.model.TypedAst;
  *
  * <ul>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code PropertyDeclaration} nodes (property type)</li>
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code ClassParameter} nodes — primary constructor
+ *       {@code val}/{@code var} params (e.g. {@code class Foo(val name: String)})</li>
  *   <li>{@link KotlinNode#RETURN_TYPE_KEY} on {@code FunctionDeclaration} nodes (return type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code FunctionValueParameter} nodes (parameter type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code CatchBlock} nodes (caught exception type)</li>
@@ -81,6 +83,22 @@ public final class KotlinTypeAnnotationVisitor {
                 List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
                 for (DeclarationAst decl : decls) {
                     if (decl.getType() != null) {
+                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                        setAnnotationAttributes(node, decl.getAnnotations());
+                        break;
+                    }
+                }
+                return visitChildren(node, data);
+            }
+
+            // Primary constructor val/var parameters (e.g. "class Foo(val name: String)")
+            // are KtClassParameter nodes in the AST, not KtPropertyDeclaration.
+            // kotlin-type-mapper emits them as kind="property" with a type field.
+            @Override
+            public Void visitClassParameter(KotlinParser.KtClassParameter node, Void data) {
+                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+                for (DeclarationAst decl : decls) {
+                    if ("property".equals(decl.getKind()) && decl.getType() != null) {
                         node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                         setAnnotationAttributes(node, decl.getAnnotations());
                         break;
