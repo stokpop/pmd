@@ -33,6 +33,8 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
      * <ul>
      *   <li>T- terminal nodes: {@code @Text} — the token text.</li>
      *   <li>Inner nodes with {@code @TypeName} set: shows the resolved type name.</li>
+     *   <li>Inner nodes with {@code @ReturnTypeName} set (e.g. {@code FunctionDeclaration}):
+     *       shows the return type name.</li>
      *   <li>Otherwise: falls back to the default (image-based) behaviour.</li>
      * </ul>
      */
@@ -45,9 +47,14 @@ public final class KotlinDesignerBindings extends DefaultDesignerBindings {
             }
         }
         if (node instanceof KotlinNode) {
-            String typeName = ((KotlinNode) node).getTypeName();
+            KotlinNode kNode = (KotlinNode) node;
+            String typeName = kNode.getTypeName();
             if (typeName != null) {
                 return new Attribute(node, "TypeName", typeName);
+            }
+            String returnTypeName = kNode.getReturnTypeName();
+            if (returnTypeName != null) {
+                return new Attribute(node, "ReturnTypeName", returnTypeName);
             }
         }
         return super.getMainAttribute(node);
