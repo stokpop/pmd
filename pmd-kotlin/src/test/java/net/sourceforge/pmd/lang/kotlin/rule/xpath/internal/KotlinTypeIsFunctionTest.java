@@ -120,8 +120,9 @@ class KotlinTypeIsFunctionTest {
         // without classpath the type hierarchy is empty and the test is skipped gracefully.
         File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/SerializableSubtype.kt");
         KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-        if (ctx.getTypeHierarchy().isEmpty()) {
-            // No hierarchy available (no compiled classes on classpath) — skip
+        // Skip if the user-defined type SerializableSubtype wasn't compiled and isn't in the hierarchy.
+        // (JDK types may still populate the hierarchy map even without a full aux classpath.)
+        if (!ctx.getTypeHierarchy().containsKey("nl.stokpop.kotlin.SerializableSubtype")) {
             return;
         }
         Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]", kotlinFile);
@@ -148,6 +149,66 @@ class KotlinTypeIsFunctionTest {
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertEquals(0, report.getViolations().size(),
                 "typeIsExactly should not match properties of SerializableSubtype");
+    }
+
+    @Test
+    void typeIsOnFunctionValueParameterMatches() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//FunctionValueParameter[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // 'cal: Calendar' parameter at line 8
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 8),
+                "Expected violation at line 8 (cal: Calendar)");
+    }
+
+    @Test
+    void typeIsOnFunctionValueParameterNoMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//FunctionValueParameter[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // 'name: String' parameter at line 13 should NOT match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 13),
+                "String parameter should not match Calendar typeIs");
+    }
+
+    @Test
+    void typeIsOnCatchBlockMatches() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//CatchBlock[pmd-kotlin:typeIs('java.io.IOException')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // catch (e: IOException) at line 21
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 21),
+                "Expected violation at line 21 (catch IOException)");
+    }
+
+    @Test
+    void typeIsOnCatchBlockNoMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//CatchBlock[pmd-kotlin:typeIs('java.io.IOException')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // catch (e: IllegalArgumentException) at line 30 should NOT match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 30),
+                "IllegalArgumentException catch block should not match IOException typeIs");
+    }
+
+    @Test
+    void typeIsOnForStatementMatches() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//ForStatement[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // for (item in items) where items: List<Calendar>, at line 37
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 37),
+                "Expected violation at line 37 (for Calendar loop variable)");
+    }
+
+    @Test
+    void typeIsOnForStatementNoMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ParameterTypes.kt");
+        Report report = runXPath("//ForStatement[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // for (s in items) where items: List<String>, at line 44 should NOT match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 44),
+                "String for-loop should not match Calendar typeIs");
     }
 
     private Report runXPath(String xpathExpr, File kotlinFile) {

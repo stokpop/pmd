@@ -19,9 +19,17 @@ import nl.stokpop.typemapper.model.DeclarationAst;
 /**
  * XPath function {@code pmd-kotlin:typeIs(typeName)}.
  *
- * <p>Returns {@code true} when the context node's declared type (for property/variable
- * declarations) or return type (for function declarations) is equivalent to, or a
+ * <p>Returns {@code true} when the context node's declared type is equivalent to, or a
  * <em>subtype</em> of, {@code typeName}. Both Java FQCNs and Kotlin FQNs are accepted.
+ *
+ * <p>Supported node types:
+ * <ul>
+ *   <li>{@code PropertyDeclaration} — property / local variable type</li>
+ *   <li>{@code FunctionDeclaration} — return type</li>
+ *   <li>{@code FunctionValueParameter} — function / constructor parameter type</li>
+ *   <li>{@code CatchBlock} — caught exception type</li>
+ *   <li>{@code ForStatement} — loop variable type</li>
+ * </ul>
  *
  * <p>Subtype checking uses the type hierarchy built by kotlin-type-mapper via reflection.
  * This requires the project's compiled classes (and their dependencies) to be on the
@@ -31,8 +39,11 @@ import nl.stokpop.typemapper.model.DeclarationAst;
  *
  * <p>Example XPath:
  * <pre>{@code
- * //PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]   -- matches subtypes too
- * //FunctionDeclaration[pmd-kotlin:typeIs('kotlin.String')]
+ * //PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]          -- matches subtypes too
+ * //FunctionDeclaration[pmd-kotlin:typeIs('kotlin.String')]                  -- return type
+ * //FunctionValueParameter[pmd-kotlin:typeIs('java.util.Map')]               -- parameter type
+ * //CatchBlock[pmd-kotlin:typeIs('java.io.IOException')]                     -- exception type
+ * //ForStatement[pmd-kotlin:typeIs('kotlin.String')]                         -- loop variable type
  * }</pre>
  */
 public final class KotlinTypeIsFunction extends BaseKotlinXPathFunction {

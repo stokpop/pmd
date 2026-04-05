@@ -14,6 +14,7 @@ import java.util.Map;
 import nl.stokpop.typemapper.model.AnnotationAst;
 import nl.stokpop.typemapper.model.DeclarationAst;
 import nl.stokpop.typemapper.model.FileAst;
+import nl.stokpop.typemapper.model.ParameterAst;
 import nl.stokpop.typemapper.model.TypedAst;
 
 /**
@@ -23,6 +24,9 @@ import nl.stokpop.typemapper.model.TypedAst;
  * <ul>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code PropertyDeclaration} nodes (property type)</li>
  *   <li>{@link KotlinNode#RETURN_TYPE_KEY} on {@code FunctionDeclaration} nodes (return type)</li>
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code FunctionValueParameter} nodes (parameter type)</li>
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code CatchBlock} nodes (caught exception type)</li>
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code ForStatement} nodes (loop variable type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code UnescapedAnnotation} <em>and</em>
  *       {@code SingleAnnotation} nodes (annotation FQN — set on both for convenience)</li>
  *   <li>{@link KotlinNode#ANNOTATION_NAMES_KEY} on declaration nodes (comma-joined FQN list)</li>
@@ -55,9 +59,10 @@ public final class KotlinTypeAnnotationVisitor {
     }
 
     /**
-     * Annotates all {@code PropertyDeclaration}, {@code FunctionDeclaration}, and
-     * {@code ClassDeclaration} nodes in the given AST root, and sets {@code @TypeName}
-     * on their {@code KtUnescapedAnnotation} children.
+     * Annotates all {@code PropertyDeclaration}, {@code FunctionDeclaration},
+     * {@code ClassDeclaration}, {@code CatchBlock}, and {@code ForStatement} nodes in
+     * the given AST root, and sets {@code @TypeName} on their annotation children
+     * as well as on {@code FunctionValueParameter} children of function declarations.
      *
      * @param root     the root node of the parsed Kotlin file
      * @param absPath  the absolute path of the file (used to extract the base filename)
@@ -91,6 +96,31 @@ public final class KotlinTypeAnnotationVisitor {
                     if (decl.getReturnType() != null) {
                         node.getUserMap().set(KotlinNode.RETURN_TYPE_KEY, decl.getReturnType());
                         setAnnotationAttributes(node, decl.getAnnotations());
+                        setFunctionParameterTypes(node, decl.getParameters());
+                        break;
+                    }
+                }
+                return visitChildren(node, data);
+            }
+
+            @Override
+            public Void visitCatchBlock(KotlinParser.KtCatchBlock node, Void data) {
+                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+                for (DeclarationAst decl : decls) {
+                    if ("catch_variable".equals(decl.getKind()) && decl.getType() != null) {
+                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                        break;
+                    }
+                }
+                return visitChildren(node, data);
+            }
+
+            @Override
+            public Void visitForStatement(KotlinParser.KtForStatement node, Void data) {
+                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+                for (DeclarationAst decl : decls) {
+                    if ("for_loop_variable".equals(decl.getKind()) && decl.getType() != null) {
+                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                         break;
                     }
                 }
@@ -114,6 +144,37 @@ public final class KotlinTypeAnnotationVisitor {
             }
 
         }, null);
+    }
+
+    /**
+     * Sets {@link KotlinNode#TYPE_NAME_KEY} on each {@code KtFunctionValueParameter}
+     * child of the given function declaration, matching by position against the
+     * {@code parameters} list from the kotlin-type-mapper {@link DeclarationAst}.
+     */
+    private static void setFunctionParameterTypes(KotlinParser.KtFunctionDeclaration funcNode,
+            List<ParameterAst> parameters) {
+        if (parameters.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < funcNode.getNumChildren(); i++) {
+            KotlinNode child = funcNode.getChild(i);
+            if (child instanceof KotlinParser.KtFunctionValueParameters) {
+                int paramIdx = 0;
+                for (int j = 0; j < child.getNumChildren(); j++) {
+                    KotlinNode sub = child.getChild(j);
+                    if (sub instanceof KotlinParser.KtFunctionValueParameter) {
+                        if (paramIdx < parameters.size()) {
+                            String type = parameters.get(paramIdx).getType();
+                            if (type != null) {
+                                sub.getUserMap().set(KotlinNode.TYPE_NAME_KEY, type);
+                            }
+                            paramIdx++;
+                        }
+                    }
+                }
+                break;
+            }
+        }
     }
 
     /**

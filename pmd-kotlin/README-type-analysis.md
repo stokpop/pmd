@@ -14,12 +14,18 @@ Returns `true` when the context node is a declaration whose resolved type matche
 
 | Context node | Checked field |
 |---|---|
-| `PropertyDeclaration` | declared property type |
+| `PropertyDeclaration` | declared property / local variable type |
 | `FunctionDeclaration` | return type |
+| `FunctionValueParameter` | function / constructor parameter type |
+| `CatchBlock` | caught exception type |
+| `ForStatement` | loop variable type |
 
 ```xpath
 //PropertyDeclaration[pmd-kotlin:typeIs('java.text.DecimalFormat')]
 //FunctionDeclaration[pmd-kotlin:typeIs('java.util.Calendar')]
+//FunctionValueParameter[pmd-kotlin:typeIs('java.util.Map')]
+//CatchBlock[pmd-kotlin:typeIs('java.io.IOException')]
+//ForStatement[pmd-kotlin:typeIs('kotlin.String')]
 ```
 
 ### `pmd-kotlin:matchesSig(sig)`
