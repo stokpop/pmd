@@ -9,6 +9,8 @@ import java.util.NoSuchElementException;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import net.sourceforge.pmd.lang.ast.AstVisitor;
 import net.sourceforge.pmd.lang.ast.impl.antlr4.BaseAntlrInnerNode;
 import net.sourceforge.pmd.lang.rule.xpath.Attribute;
@@ -40,7 +42,51 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
     }
 
     /**
-     * Overridden to suppress attributes whose getter returns {@code null}.
+     * Returns the explicit modifier keywords of this declaration node as a
+     * space-separated string (e.g. {@code "override suspend"}), or {@code null}
+     * if this node has no modifier keywords. Annotations inside the modifier list
+     * are excluded. Exposed as XPath attribute {@code @Modifiers}.
+     */
+    @Override
+    public @Nullable String getModifiers() {
+        for (int i = 0; i < getNumChildren(); i++) {
+            KotlinNode child = getChild(i);
+            if (child instanceof KotlinParser.KtModifiers) {
+                KotlinParser.KtModifiers mods = (KotlinParser.KtModifiers) child;
+                StringBuilder sb = new StringBuilder();
+                for (int j = 0; j < mods.getNumChildren(); j++) {
+                    KotlinNode mod = mods.getChild(j);
+                    if (mod instanceof KotlinParser.KtModifier) {
+                        String kw = firstModifierKeyword(mod);
+                        if (kw != null) {
+                            if (sb.length() > 0) {
+                                sb.append(' ');
+                            }
+                            sb.append(kw);
+                        }
+                    }
+                    // KtAnnotation children are skipped
+                }
+                return sb.length() > 0 ? sb.toString() : null;
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable String firstModifierKeyword(KotlinNode node) {
+        if (node instanceof KotlinTerminalNode) {
+            return ((KotlinTerminalNode) node).getText();
+        }
+        for (int i = 0; i < node.getNumChildren(); i++) {
+            String found = firstModifierKeyword(node.getChild(i));
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /**
      * This prevents optional attributes like {@code @TypeName} and
      * {@code @ReturnTypeName} from appearing on every node in the PMD Designer
      * when they have no meaningful value — consistent with how {@code @Text}

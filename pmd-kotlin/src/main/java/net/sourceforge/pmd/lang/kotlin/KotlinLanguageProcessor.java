@@ -25,9 +25,11 @@ import net.sourceforge.pmd.lang.document.TextFileContent;
 import net.sourceforge.pmd.lang.impl.BatchLanguageProcessor;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinTypeAnnotationVisitor;
+import net.sourceforge.pmd.lang.kotlin.internal.KotlinDesignerBindings;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinTypeAnalysisContext;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinTypeAnalysisContextHolder;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathHandler;
+import net.sourceforge.pmd.util.designerbindings.DesignerBindings;
 
 import nl.stokpop.typemapper.analyzer.KotlinTypeMapper;
 import nl.stokpop.typemapper.model.TypedAst;
@@ -228,6 +230,11 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         @Override
         public XPathHandler getXPathHandler() {
             return baseHandler.getXPathHandler();
+        }
+
+        @Override
+        public DesignerBindings getDesignerBindings() {
+            return KotlinDesignerBindings.INSTANCE;
         }
 
         @Override

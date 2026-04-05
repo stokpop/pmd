@@ -76,4 +76,18 @@ public interface KotlinNode extends AntlrNode<KotlinNode> {
     default @Nullable String getReturnTypeName() {
         return getUserMap().get(RETURN_TYPE_KEY);
     }
+
+    /**
+     * Returns the explicit modifier keywords of this declaration node as a
+     * space-separated string, e.g. {@code "override suspend"} or {@code "data open"}.
+     * Returns {@code null} when this node has no {@code Modifiers} child or when
+     * all children of {@code Modifiers} are annotations (annotations are excluded).
+     * Exposed as XPath attribute {@code @Modifiers}.
+     *
+     * <p>Visible in the PMD Designer only on nodes that carry at least one keyword modifier.
+     * Implemented in {@link KotlinInnerNode}; returns {@code null} by default (e.g. on terminal nodes).
+     */
+    default @Nullable String getModifiers() {
+        return null;
+    }
 }
