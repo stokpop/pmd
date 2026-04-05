@@ -23,7 +23,8 @@ import nl.stokpop.typemapper.model.TypedAst;
  * <ul>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code PropertyDeclaration} nodes (property type)</li>
  *   <li>{@link KotlinNode#RETURN_TYPE_KEY} on {@code FunctionDeclaration} nodes (return type)</li>
- *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code KtUnescapedAnnotation} nodes (annotation FQN)</li>
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code UnescapedAnnotation} <em>and</em>
+ *       {@code SingleAnnotation} nodes (annotation FQN — set on both for convenience)</li>
  *   <li>{@link KotlinNode#ANNOTATION_NAMES_KEY} on declaration nodes (comma-joined FQN list)</li>
  * </ul>
  *
@@ -156,6 +157,12 @@ public final class KotlinTypeAnnotationVisitor {
             }
             if (fqn != null) {
                 annNode.getUserMap().set(KotlinNode.TYPE_NAME_KEY, fqn);
+                // Also set on the parent SingleAnnotation so users can query
+                // //SingleAnnotation[@TypeName='org.example.Foo'] directly.
+                KotlinNode parent = annNode.getParent();
+                if (parent instanceof KotlinParser.KtSingleAnnotation) {
+                    parent.getUserMap().set(KotlinNode.TYPE_NAME_KEY, fqn);
+                }
             }
         }
     }
