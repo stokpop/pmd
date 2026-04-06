@@ -231,6 +231,50 @@ class KotlinTypeIsFunctionTest {
                 "String for-loop should not match Calendar typeIs");
     }
 
+    @Test
+    void typeIsMatchesInferredTypeSubtypeViaSourceHierarchy() {
+        // "val myValue = Simple("Hello")" — type is INFERRED (no explicit annotation).
+        // Simple is defined in the same file and implements Serializable.
+        // The source hierarchy (from K1 analysis) should make typeIs work without compiled classes.
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/InferredTypeSubtype.kt");
+        Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        // val myValue = Simple("Hello") is at line 7
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 7),
+                "Expected match at line 7 (val myValue: inferred Simple which implements Serializable)");
+    }
+
+    @Test
+    void typeIsDoesNotMatchUnrelatedInferredType() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/InferredTypeSubtype.kt");
+        Report report = runXPath("//PropertyDeclaration[pmd-kotlin:typeIs('java.util.Calendar')]", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertEquals(0, report.getViolations().size(),
+                "Simple is not a Calendar, should not match");
+    }
+
+    @Test
+    void classDeclarationHasTypeNameAttribute() {
+        // ClassDeclaration nodes should have @TypeName set to the class's own FQN
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/InferredTypeSubtype.kt");
+        Report report = runXPath(
+                "//ClassDeclaration[@TypeName='nl.stokpop.kotlin.Simple']", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(!report.getViolations().isEmpty(),
+                "Expected ClassDeclaration[@TypeName='nl.stokpop.kotlin.Simple'] to match");
+    }
+
+    @Test
+    void delegationSpecifierHasTypeNameAttribute() {
+        // DelegationSpecifier nodes (supertypes) should have @TypeName set to the supertype FQN
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/InferredTypeSubtype.kt");
+        Report report = runXPath(
+                "//DelegationSpecifier[@TypeName='java.io.Serializable']", kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(!report.getViolations().isEmpty(),
+                "Expected DelegationSpecifier[@TypeName='java.io.Serializable'] to match");
+    }
+
     private Report runXPath(String xpathExpr, File kotlinFile) {
         PMDConfiguration config = new PMDConfiguration();
         config.setIgnoreIncrementalAnalysis(true);

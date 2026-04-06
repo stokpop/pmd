@@ -154,7 +154,10 @@ public final class KotlinTypeAnnotationVisitor {
                             || "sealed_class".equals(decl.getKind())
                             || "interface".equals(decl.getKind())
                             || "enum".equals(decl.getKind())) {
+                        // Set @TypeName to the class's own FQN (useful in Designer + XPath)
+                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getFqName());
                         setAnnotationAttributes(node, decl.getAnnotations());
+                        setDelegationSpecifierTypes(node, decl.getSuperTypes());
                         break;
                     }
                 }
@@ -162,6 +165,90 @@ public final class KotlinTypeAnnotationVisitor {
             }
 
         }, null);
+    }
+
+    /**
+     * Sets {@link KotlinNode#TYPE_NAME_KEY} on each {@code KtDelegationSpecifier}
+     * node inside the class declaration, matching the written supertype name (e.g.
+     * {@code Serializable}) against the FQNs in {@code superTypes}.
+     */
+    private static void setDelegationSpecifierTypes(KotlinParser.KtClassDeclaration classNode,
+            List<String> superTypes) {
+        if (superTypes.isEmpty()) {
+            return;
+        }
+        Map<String, String> simpleToFqn = new HashMap<>();
+        for (String fqn : superTypes) {
+            simpleToFqn.put(simpleNameOf(fqn), fqn);
+        }
+        for (int i = 0; i < classNode.getNumChildren(); i++) {
+            KotlinNode child = classNode.getChild(i);
+            if (child instanceof KotlinParser.KtDelegationSpecifiers) {
+                for (int j = 0; j < child.getNumChildren(); j++) {
+                    KotlinNode spec = child.getChild(j);
+                    if (spec instanceof KotlinParser.KtAnnotatedDelegationSpecifier) {
+                        for (int k = 0; k < spec.getNumChildren(); k++) {
+                            KotlinNode inner = spec.getChild(k);
+                            if (inner instanceof KotlinParser.KtDelegationSpecifier) {
+                                annotateDelegationSpecifier(
+                                        (KotlinParser.KtDelegationSpecifier) inner, simpleToFqn);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Sets {@link KotlinNode#TYPE_NAME_KEY} on a single {@code KtDelegationSpecifier}
+     * by extracting the written type name from its contained {@code KtUserType}.
+     */
+    private static void annotateDelegationSpecifier(KotlinParser.KtDelegationSpecifier spec,
+            Map<String, String> simpleToFqn) {
+        KotlinParser.KtUserType userType = findUserTypeInDelegationSpecifier(spec);
+        if (userType == null) {
+            return;
+        }
+        try {
+            String written = userType.getTextDocument()
+                    .sliceOriginalText(userType.getTextRegion())
+                    .toString();
+            int angle = written.indexOf('<');
+            if (angle >= 0) {
+                written = written.substring(0, angle).trim();
+            }
+            String fqn = simpleToFqn.get(simpleNameOf(written));
+            if (fqn != null) {
+                spec.getUserMap().set(KotlinNode.TYPE_NAME_KEY, fqn);
+            }
+        } catch (Exception ignored) {
+            // defensive
+        }
+    }
+
+    /**
+     * Finds the {@code KtUserType} inside a {@code KtDelegationSpecifier}.
+     * Handles both direct {@code userType()} cases and {@code constructorInvocation()}
+     * (superclass with constructor call).
+     */
+    private static KotlinParser.KtUserType findUserTypeInDelegationSpecifier(
+            KotlinParser.KtDelegationSpecifier spec) {
+        for (int i = 0; i < spec.getNumChildren(); i++) {
+            KotlinNode child = spec.getChild(i);
+            if (child instanceof KotlinParser.KtUserType) {
+                return (KotlinParser.KtUserType) child;
+            }
+            if (child instanceof KotlinParser.KtConstructorInvocation) {
+                for (int j = 0; j < child.getNumChildren(); j++) {
+                    if (child.getChild(j) instanceof KotlinParser.KtUserType) {
+                        return (KotlinParser.KtUserType) child.getChild(j);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
