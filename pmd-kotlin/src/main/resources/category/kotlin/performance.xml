@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ruleset name="Performance"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+Rules that flag suboptimal code.
+    </description>
+
+    <rule name="AvoidCalendarDateCreation"
+          language="kotlin"
+          since="7.x"
+          message="Avoid creating Calendar instances; use the java.time API (LocalDateTime, ZonedDateTime) instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#avoidcalendardatecreation">
+        <description>
+            java.util.Calendar is a heavyweight, mutable object. Creating a Calendar instance just
+            to obtain the current date or time is expensive and unnecessarily verbose.
+
+            Prefer the modern java.time API introduced in Java 8:
+            - java.time.LocalDateTime.now() / ZonedDateTime.now() for date-time values
+            - java.time.Instant.now() for a machine timestamp
+            - java.time.LocalDate.today() for date-only values
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/AvoidCalendarDateCreation
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/AvoidCalendarDateCreation"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.util.Calendar#getInstance(*)')
+    or pmd-kotlin:matchesSig('java.util.GregorianCalendar#<init>(*)')
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.util.Calendar
+import java.time.LocalDateTime
+
+class Bad {
+    fun currentMillis(): Long {
+        return Calendar.getInstance().timeInMillis  // violation
+    }
+}
+
+class Good {
+    fun currentMillis(): Long {
+        return System.currentTimeMillis()  // ok: no Calendar created
+    }
+
+    fun now(): LocalDateTime {
+        return LocalDateTime.now()  // ok: java.time API
+    }
+}
+        ]]></example>
+    </rule>
+
+</ruleset>

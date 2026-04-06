@@ -123,32 +123,78 @@ class KotlinMatchesSigFunctionTest {
                 "Expected violation at line 3 (items.size with wildcard receiver)");
     }
 
+    // --- AvoidPrintStackTrace ---
+
     @Test
-    void matchesSigPatternCompileOnlyMatchesCallNotArgument() {
-        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PatternCompileUsage.kt");
+    void printStackTrace_matchesBadCase() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PrintStackTraceUsage.kt");
         Report report = runXPath(
-                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')]",
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]",
                 kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // Pattern.compile("[a-z]+") on line 5 should match
-        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 5),
-                "Expected violation at line 5 (Pattern.compile call)");
-        // The string literal argument "[a-z]+" is also on line 5 but should NOT produce a
-        // separate match — it should not be reported as a PostfixUnaryExpression hit
-        assertEquals(1, report.getViolations().stream().filter(v -> v.getBeginLine() == 5).count(),
-                "Expected exactly one violation on line 5, not two (call + argument)");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 6),
+                "Expected violation at line 6 (e.printStackTrace())");
     }
 
     @Test
-    void matchesSigPatternCompileDoesNotMatchUnrelatedCall() {
-        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PatternCompileUsage.kt");
+    void printStackTrace_doesNotMatchRethrow() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PrintStackTraceUsage.kt");
         Report report = runXPath(
-                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')]",
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]",
                 kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // noCompile() body has no Pattern.compile — line 10 should not match
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 14),
+                "Line 14 is a re-throw, not printStackTrace — should not match");
+    }
+
+    // --- SystemPrintln ---
+
+    @Test
+    void systemOutPrintln_matchesBadCase() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/SystemPrintlnUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.io.PrintStream#println(*)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 3),
+                "Expected violation at line 3 (System.out.println)");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 4),
+                "Expected violation at line 4 (System.err.println)");
+    }
+
+    @Test
+    void systemPrintln_doesNotMatchUnrelatedCode() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/SystemPrintlnUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.io.PrintStream#println(*)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 8),
+                "Line 8 is simple arithmetic — should not match");
+    }
+
+    // --- AvoidCalendarDateCreation ---
+
+    @Test
+    void calendarGetInstance_matchesBadCase() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/CalendarDateUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.Calendar#getInstance(*)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 5),
+                "Expected violation at line 5 (Calendar.getInstance())");
+    }
+
+    @Test
+    void calendarGetInstance_doesNotMatchLocalDateTimeNow() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/CalendarDateUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.Calendar#getInstance(*)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 10),
-                "Did not expect violation at line 10 (no Pattern.compile there)");
+                "Line 10 uses LocalDateTime.now() — should not match Calendar.getInstance");
     }
 
     private Report runXPath(String xpathExpr, File kotlinFile) {

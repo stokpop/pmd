@@ -9,46 +9,151 @@
 Rules which enforce generally accepted best practices.
     </description>
 
-    <rule name="AvoidRecompilingPatterns"
+    <rule name="AvoidMessageDigestField"
           language="kotlin"
           since="7.x"
-          message="Pattern.compile() is called inside a function body. Compile the pattern once as a constant or field."
+          message="MessageDigest fields are not thread-safe; declare a local instance instead."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
-          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#avoidrecompilingpatterns">
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#avoidmessagedigestfield">
         <description>
-            Compiling a regular expression pattern on every method call is expensive.
-            Assign the compiled Pattern to a companion object constant or class field so it is
-            compiled only once and shared safely (java.util.Pattern is thread-safe).
+            java.security.MessageDigest is not thread-safe. Declaring it as a class field exposes
+            it to concurrent access without explicit synchronisation, producing incorrect digests.
+            Create a new instance per method call, or protect shared access with a mutex.
 
             Note: this rule requires kotlin-type-mapper pre-analysis to be available.
             See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/bestpractices.xml/AvoidMessageDigestField
         </description>
         <priority>2</priority>
         <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/bestpractices.xml/AvoidMessageDigestField"/>
             <property name="xpath">
                 <value><![CDATA[
-//FunctionBody//PostfixUnaryExpression[
-    pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')
+//PropertyDeclaration[
+    not(ancestor::FunctionBody)
+    and pmd-kotlin:typeIs('java.security.MessageDigest')
 ]
                 ]]></value>
             </property>
         </properties>
         <example><![CDATA[
-import java.util.regex.Pattern
+import java.security.MessageDigest
 
 class Bad {
-    fun isValid(input: String): Boolean {
-        val p = Pattern.compile("[A-Z][a-z]+") // violation: compiled every call
-        return p.matcher(input).matches()
+    private val md: MessageDigest = MessageDigest.getInstance("SHA-256") // violation
+
+    fun hash(data: ByteArray): ByteArray {
+        md.reset()
+        return md.digest(data) // race condition if called from multiple threads
     }
 }
 
 class Good {
-    companion object {
-        private val WORD_PATTERN = Pattern.compile("[A-Z][a-z]+") // ok: compiled once
+    fun hash(data: ByteArray): ByteArray {
+        val md = MessageDigest.getInstance("SHA-256") // ok: new instance per call
+        return md.digest(data)
     }
+}
+        ]]></example>
+    </rule>
 
-    fun isValid(input: String): Boolean = WORD_PATTERN.matcher(input).matches()
+    <rule name="AvoidPrintStackTrace"
+          language="kotlin"
+          since="7.x"
+          message="Avoid printStackTrace(); use a logger call instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#avoidprintstacktrace">
+        <description>
+            Avoid calling Throwable.printStackTrace(); use a proper logger (e.g. SLF4J, Log4j2) instead.
+            Stack traces printed to standard output can be lost in production and carry no log level,
+            making them hard to control or suppress.
+
+            Kotlin equivalent of Java rule: category/java/bestpractices.xml/AvoidPrintStackTrace
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun handle() {
+        try {
+            riskyOperation()
+        } catch (e: Exception) {
+            e.printStackTrace() // violation: use logger instead
+        }
+    }
+}
+
+class Good {
+    private val log = org.slf4j.LoggerFactory.getLogger(Good::class.java)
+
+    fun handle() {
+        try {
+            riskyOperation()
+        } catch (e: Exception) {
+            log.error("riskyOperation failed", e) // ok
+        }
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="AvoidStringBufferField"
+          language="kotlin"
+          since="7.x"
+          message="StringBuffer/StringBuilder fields can grow large and become a source of memory leaks."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#avoidstringbufferfield">
+        <description>
+            StringBuffer and StringBuilder instances can grow considerably and, if held as class
+            fields across long-lived objects, may cause memory leaks. Prefer creating a local
+            instance inside the method that needs it, or use String concatenation / string templates
+            which the Kotlin compiler optimises automatically.
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/bestpractices.xml/AvoidStringBufferField
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/bestpractices.xml/AvoidStringBufferField"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PropertyDeclaration[
+    not(ancestor::FunctionBody)
+    and (pmd-kotlin:typeIs('java.lang.StringBuffer')
+      or pmd-kotlin:typeIs('java.lang.StringBuilder'))
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    private val sb: StringBuffer = StringBuffer()   // violation: potential memory leak
+
+    fun append(s: String) = sb.append(s)
+}
+
+class Good {
+    fun buildMessage(parts: List<String>): String {
+        val sb = StringBuilder()                    // ok: local variable
+        parts.forEach { sb.append(it) }
+        return sb.toString()
+    }
 }
         ]]></example>
     </rule>
@@ -77,6 +182,55 @@ fun cl() {} // violation, no unavailable attribute added to the function declara
 fun calculateLayout() // no violation
 ]]>
         </example>
+    </rule>
+
+    <rule name="SystemPrintln"
+          language="kotlin"
+          since="7.x"
+          message="Usage of System.out/err print methods; use a proper logger instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#systemprintln">
+        <description>
+            Calls to System.out.print*, System.err.print*, or System.out.printf are typically
+            left-over debug statements. Use a proper logging framework (SLF4J, Log4j2, kotlin-logging)
+            so output can be controlled by log level and configuration without redeploying.
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/bestpractices.xml/SystemPrintln
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/bestpractices.xml/SystemPrintln"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.io.PrintStream#println(*)')
+    or pmd-kotlin:matchesSig('java.io.PrintStream#print(*)')
+    or pmd-kotlin:matchesSig('java.io.PrintStream#printf(*)')
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun report(msg: String) {
+        System.out.println(msg)       // violation
+        System.err.println("error!")  // violation
+    }
+}
+
+class Good {
+    private val log = org.slf4j.LoggerFactory.getLogger(Good::class.java)
+
+    fun report(msg: String) {
+        log.info(msg)  // ok
+    }
+}
+        ]]></example>
     </rule>
 
 </ruleset>

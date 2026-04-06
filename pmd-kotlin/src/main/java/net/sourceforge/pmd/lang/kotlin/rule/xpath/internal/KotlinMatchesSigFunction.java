@@ -99,7 +99,7 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
                             continue;
                         }
                     }
-                    if (SignatureMatcherKt.matchesSigEquivalent(call, sig)) {
+                    if (SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf)) {
                         return true;
                     }
                 }

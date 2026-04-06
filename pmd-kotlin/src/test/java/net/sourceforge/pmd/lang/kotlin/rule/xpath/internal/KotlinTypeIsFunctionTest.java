@@ -264,6 +264,65 @@ class KotlinTypeIsFunctionTest {
                 "Expected ClassDeclaration[@TypeName='nl.stokpop.kotlin.Simple'] to match");
     }
 
+    // --- AvoidStringBufferField ---
+
+    @Test
+    void stringBufferFieldMatchesStringBufferProperty() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/StringBufferFieldUsage.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[not(ancestor::FunctionBody) and pmd-kotlin:typeIs('java.lang.StringBuffer')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 2),
+                "Expected violation at line 2 (StringBuffer field)");
+    }
+
+    @Test
+    void stringBuilderFieldMatchesStringBuilderProperty() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/StringBufferFieldUsage.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[not(ancestor::FunctionBody) and pmd-kotlin:typeIs('java.lang.StringBuilder')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 3),
+                "Expected violation at line 3 (StringBuilder field)");
+    }
+
+    @Test
+    void stringBuilderLocalVariableDoesNotMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/StringBufferFieldUsage.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[not(ancestor::FunctionBody) and pmd-kotlin:typeIs('java.lang.StringBuilder')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 6),
+                "Local variable at line 6 should NOT match (inside FunctionBody)");
+    }
+
+    // --- AvoidMessageDigestField ---
+
+    @Test
+    void messageDigestFieldMatchesFieldProperty() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/MessageDigestFieldUsage.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[not(ancestor::FunctionBody) and pmd-kotlin:typeIs('java.security.MessageDigest')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 4),
+                "Expected violation at line 4 (MessageDigest field)");
+    }
+
+    @Test
+    void messageDigestLocalVariableDoesNotMatch() {
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/MessageDigestFieldUsage.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[not(ancestor::FunctionBody) and pmd-kotlin:typeIs('java.security.MessageDigest')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 7),
+                "Local variable at line 7 should NOT match (inside FunctionBody)");
+    }
+
     @Test
     void delegationSpecifierHasTypeNameAttribute() {
         // DelegationSpecifier nodes (supertypes) should have @TypeName set to the supertype FQN
