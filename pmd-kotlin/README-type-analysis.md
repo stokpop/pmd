@@ -2,6 +2,133 @@
 
 ---
 
+## Running PMD on a Kotlin Project
+
+### CLI (standalone)
+
+```bash
+pmd check \
+  --dir src/main/kotlin \
+  --rulesets category/kotlin/bestpractices.xml,category/kotlin/errorprone.xml,category/kotlin/performance.xml,category/kotlin/multithreading.xml \
+  --format text
+```
+
+The `typeIs`/`matchesSig` rules require type-resolution data from `kotlin-type-mapper`.
+This runs **automatically** inside `KotlinLanguageProcessor` on each analysis — no extra
+configuration is needed.
+
+If your code uses external libraries (Spring, JPA, etc.) and you need subtype hierarchy
+across those types, provide the compiled JARs:
+
+```bash
+pmd check \
+  --dir src/main/kotlin \
+  --rulesets category/kotlin/errorprone.xml \
+  --aux-classpath "$(find ~/.gradle/caches -name '*.jar' | tr '\n' ':')"
+```
+
+For a **Maven project**, build the classpath automatically:
+
+```bash
+pmd check \
+  --dir src/main/kotlin \
+  --rulesets category/kotlin/bestpractices.xml \
+  --aux-classpath "$(mvn -q dependency:build-classpath -DforceStdout)"
+```
+
+For a **Gradle project**:
+
+```bash
+pmd check \
+  --dir src/main/kotlin \
+  --rulesets category/kotlin/bestpractices.xml \
+  --aux-classpath "$(./gradlew -q printClasspath)"   # requires a printClasspath task
+```
+
+---
+
+### Maven Plugin
+
+The `maven-pmd-plugin` sets up the aux-classpath automatically from the project's
+resolved dependencies.
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-pmd-plugin</artifactId>
+  <version>3.24.0</version>
+  <configuration>
+    <rulesets>
+      <ruleset>category/kotlin/bestpractices.xml</ruleset>
+      <ruleset>category/kotlin/errorprone.xml</ruleset>
+      <ruleset>category/kotlin/performance.xml</ruleset>
+      <ruleset>category/kotlin/multithreading.xml</ruleset>
+    </rulesets>
+    <!-- Kotlin sources live under src/main/kotlin, not src/main/java -->
+    <sourceDirectories>
+      <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+    </sourceDirectories>
+  </configuration>
+</plugin>
+```
+
+Run with:
+
+```bash
+mvn pmd:check        # fails the build on violations
+mvn pmd:pmd          # generates report only
+```
+
+---
+
+### Gradle Plugin
+
+```kotlin
+// build.gradle.kts
+plugins {
+    id("pmd")
+}
+
+pmd {
+    toolVersion = "7.x.x"
+    ruleSetFiles = files("config/pmd/kotlin-rules.xml")
+    isConsoleOutput = true
+}
+
+tasks.withType<Pmd> {
+    source = fileTree("src/main/kotlin")
+}
+```
+
+Where `config/pmd/kotlin-rules.xml` references the rule categories:
+
+```xml
+<?xml version="1.0"?>
+<ruleset name="Kotlin Rules"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Kotlin rules for this project</description>
+
+  <rule ref="category/kotlin/bestpractices.xml"/>
+  <rule ref="category/kotlin/errorprone.xml"/>
+  <rule ref="category/kotlin/performance.xml"/>
+  <rule ref="category/kotlin/multithreading.xml"/>
+</ruleset>
+```
+
+Run with:
+
+```bash
+./gradlew pmdMain    # checks src/main/kotlin
+./gradlew pmdTest    # checks src/test/kotlin
+```
+
+The Gradle PMD plugin passes the compile classpath to PMD automatically, so
+`typeIs`/`matchesSig` resolve external types without extra configuration.
+
+---
+
 ## Functions
 
 ### `pmd-kotlin:typeIs(typeName)`

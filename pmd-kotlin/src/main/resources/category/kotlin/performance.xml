@@ -65,4 +65,144 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="AvoidFileStream"
+          language="kotlin"
+          since="7.x"
+          message="Avoid FileInputStream/FileOutputStream/FileReader/FileWriter; use File.inputStream() or Files.newInputStream()."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#avoidfilestream">
+        <description>
+            FileInputStream/OutputStream/Reader/Writer contain a finalizer that can cause GC
+            pressure. In Kotlin prefer:
+            - File.inputStream() / File.outputStream() for byte streams
+            - File.bufferedReader() / File.bufferedWriter() for character streams
+            - File.readBytes() / File.readText() / File.writeText() for one-shot reads/writes
+            - Files.newInputStream(path) / Files.newOutputStream(path) for the NIO2 approach
+            All of these avoid the finalizer and work naturally with use {}.
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/AvoidFileStream
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/AvoidFileStream"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.io.FileInputStream#<init>(*)')
+    or pmd-kotlin:matchesSig('java.io.FileOutputStream#<init>(*)')
+    or pmd-kotlin:matchesSig('java.io.FileReader#<init>(*)')
+    or pmd-kotlin:matchesSig('java.io.FileWriter#<init>(*)')
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.io.File
+import java.io.FileInputStream
+import java.nio.file.Files
+
+class Bad {
+    fun read(file: File): ByteArray {
+        return FileInputStream(file).readBytes() // violation: use finalizer-free alternative
+    }
+}
+
+class Good {
+    fun read(file: File): ByteArray {
+        return file.inputStream().use { it.readBytes() } // ok: extension function, no finalizer
+    }
+
+    fun readNio(file: File): ByteArray {
+        return Files.newInputStream(file.toPath()).use { it.readBytes() } // ok: NIO approach
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="StringInstantiation"
+          language="kotlin"
+          since="7.x"
+          message="Avoid creating String objects unnecessarily; use a String literal instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#stringinstantiation">
+        <description>
+            Strings are immutable in Kotlin/JVM. Creating String(someString) just copies the
+            reference to a new object; use the string literal or variable directly.
+
+            Note: Unlike Java's `new String(str)`, Kotlin's `kotlin.String` does not expose a
+            String(String) copy constructor, so this rule primarily catches Java-interop patterns
+            where the Java constructor is invoked explicitly (e.g. via reflection or a helper
+            that calls `java.lang.String(String)`).
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/StringInstantiation
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/StringInstantiation"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.String#<init>(java.lang.String)')]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun bad(): String {
+        return String("hello") // violation: unnecessary String constructor call
+    }
+}
+
+class Good {
+    fun good(): String {
+        return "hello" // ok: use the string literal directly
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="StringToString"
+          language="kotlin"
+          since="7.x"
+          message="Avoid calling toString() on a String; it returns the same object."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#stringtostring">
+        <description>
+            Calling toString() on a String is a no-op; the same String instance is returned.
+            Remove the unnecessary call.
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/StringToString
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/StringToString"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.String#toString()')]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun bad(name: String): String {
+        return name.toString() // violation: toString() on a String is a no-op
+    }
+}
+
+class Good {
+    fun good(name: String): String {
+        return name // ok: use the String variable directly
+    }
+}
+        ]]></example>
+    </rule>
+
 </ruleset>
