@@ -38,4 +38,38 @@
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>
+            Regression: multi-line call with string templates + concatenation should only report the explicit `.toString()` on the string literal.
+        </description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>22</expected-linenumbers>
+        <code><![CDATA[private fun reportProblem(
+    cause: Exception,
+    info: String,
+    context: String,
+    service: Any
+) {
+    // no-op
+}
+
+private data class RequestData(
+    val userId: String,
+    val cardNumber: String,
+    val iban: String
+)
+
+private fun reproduceFalsePositive(request: RequestData, service: Any, ex: Exception) {
+    reportProblem(
+        cause = ex,
+        info =
+            "userId: ${request.userId} card: " +
+                "${request.cardNumber} iban:${request.iban}",
+        context = "unlinking".toString(), // violation
+        service = service
+    )
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

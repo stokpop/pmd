@@ -82,18 +82,23 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
                     return false;
                 }
                 String sig        = (String) arguments[0];
-                String absPath    = contextNode.getTextDocument().getFileId().getAbsolutePath();
-                int    beginLine  = contextNode.getBeginLine();
-                int    beginCol   = contextNode.getBeginColumn();
-                int    endCol     = contextNode.getEndColumn();
+                String absPath      = contextNode.getTextDocument().getFileId().getAbsolutePath();
+                int    beginLine    = contextNode.getBeginLine();
+                int    beginCol     = contextNode.getBeginColumn();
+                int    endCol       = contextNode.getEndColumn();
+                // For single-line nodes the column span is meaningful across both the exact
+                // line and the ±1 fallback lines returned by callSitesAt.  For multi-line
+                // nodes endCol is on the closing line, so cross-line span comparison breaks.
+                boolean singleLine  = (contextNode.getEndLine() == beginLine);
 
                 KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
                 List<CallSiteAst> calls = ctx.callSitesAt(absPath, beginLine);
                 for (CallSiteAst call : calls) {
-                    // When the call site is on the exact same line, require its column
-                    // to fall within the node's column span.  This prevents sibling nodes
-                    // on the same line (e.g. string-literal arguments) from also matching.
-                    if (call.getLine() == beginLine) {
+                    // Require the call's column to fall within the node's column span when:
+                    //  a) the call is on the exact same line (prevents sibling nodes), or
+                    //  b) the node is single-line and the call arrived via ±1 fallback
+                    //     (prevents adjacent expressions from matching by spillover).
+                    if (call.getLine() == beginLine || singleLine) {
                         int col = call.getColumn();
                         if (col < beginCol || col > endCol) {
                             continue;
