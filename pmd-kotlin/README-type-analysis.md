@@ -7,24 +7,36 @@
 ### `pmd-kotlin:typeIs(typeName)`
 
 Returns `true` when the context node is a declaration whose resolved type matches `typeName`.
+Type inference is supported — the type does not need to be written explicitly in source.
 
 | Context node | Checked field |
 |---|---|
-| `PropertyDeclaration` | declared property type |
+| `PropertyDeclaration` | declared or inferred property type |
+| `ClassParameter` | primary constructor `val`/`var` parameter type |
 | `FunctionDeclaration` | return type |
+| `FunctionValueParameter` | function parameter type |
+| `CatchBlock` | caught exception type |
+| `ForStatement` | loop variable type |
 
 ```xpath
 //PropertyDeclaration[pmd-kotlin:typeIs('java.text.DecimalFormat')]
 //FunctionDeclaration[pmd-kotlin:typeIs('java.util.Calendar')]
+//ClassParameter[pmd-kotlin:typeIs('kotlin.String')]
+//FunctionValueParameter[pmd-kotlin:typeIs('java.util.Calendar')]
+//CatchBlock[pmd-kotlin:typeIs('java.io.IOException')]
+//ForStatement[pmd-kotlin:typeIs('kotlin.String')]
 ```
 
 ### `pmd-kotlin:matchesSig(sig)`
 
 Returns `true` when the context node is an expression that is a call site matching the given
-signature pattern.
+signature pattern. Use on `PostfixUnaryExpression` nodes (method calls, property reads,
+and constructor calls).
 
 ```xpath
 //PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#compile(_)')]
+// Constructor call (method name is always <init>):
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('nl.example.Foo#<init>(*)')]
 ```
 
 ---
@@ -77,7 +89,76 @@ the class prefix of the fully-qualified callee name.
 
 ---
 
-## Pre-Analysis Requirement
+## `@TypeName` Coverage — which nodes get a type and when
+
+Not every node in the Kotlin AST has a `@TypeName` attribute. The table below shows
+exactly which nodes are annotated and the right XPath function for each pattern.
+
+### Nodes that receive `@TypeName`
+
+| Node | `@TypeName` value | XPath example |
+|---|---|---|
+| `PropertyDeclaration` | declared or **inferred** property type | `//PropertyDeclaration[@TypeName='nl.example.Foo']` |
+| `ClassParameter` | primary constructor `val`/`var` type | `//ClassParameter[@TypeName='kotlin.String']` |
+| `FunctionValueParameter` | function parameter type | `//FunctionValueParameter[@TypeName='java.util.Calendar']` |
+| `CatchBlock` | caught exception type | `//CatchBlock[@TypeName='java.io.IOException']` |
+| `ForStatement` | loop variable type | `//ForStatement[@TypeName='kotlin.String']` |
+| `ClassDeclaration` | the class's **own FQN** | `//ClassDeclaration[@TypeName='nl.example.Foo']` |
+| `DelegationSpecifier` | supertype FQN (e.g. `: Serializable`) | `//DelegationSpecifier[@TypeName='java.io.Serializable']` |
+| `UnescapedAnnotation` / `SingleAnnotation` | annotation FQN | `//SingleAnnotation[@TypeName='org.example.Ann']` |
+
+### Nodes that do NOT receive `@TypeName`
+
+| Node | How to query instead |
+|---|---|
+| `PostfixUnaryExpression` (method/constructor call) | `pmd-kotlin:matchesSig(...)` |
+| `FunctionDeclaration` | `@ReturnTypeName` / `pmd-kotlin:typeIs(...)` |
+| `UserType` inside an expression (e.g. `Simple` in `Simple("Hello")`) | use `matchesSig` on the enclosing `PostfixUnaryExpression` |
+| `SimpleIdentifier` / `T-Identifier` | `@Identifier` attribute (text only, no type) |
+
+### Decision guide: `typeIs` vs `matchesSig`
+
+```
+Q: Does the node represent a *declaration* (variable, parameter, field, return)?
+   → use pmd-kotlin:typeIs()    on PropertyDeclaration / FunctionDeclaration / etc.
+
+Q: Does the node represent a *call* (method call, constructor call, property read)?
+   → use pmd-kotlin:matchesSig() on PostfixUnaryExpression
+
+Q: Is it a constructor call?
+   → pmd-kotlin:matchesSig('com.example.Foo#<init>(*)')
+     method name is always <init>, receiver is the class being constructed
+```
+
+### Example — inferred type matching a subtype
+
+```kotlin
+class Simple(val value: String) : Serializable   // type inferred from source
+
+val myValue = Simple("Hello")   // @TypeName = "nl.example.Simple" (inferred by K1)
+```
+
+```xpath
+// Matches val myValue (inferred type Simple, which implements Serializable):
+//PropertyDeclaration[pmd-kotlin:typeIs('java.io.Serializable')]
+
+// Matches the class declaration of Simple itself:
+//ClassDeclaration[@TypeName='nl.example.Simple']
+
+// Matches the Serializable supertype reference in the class header:
+//DelegationSpecifier[@TypeName='java.io.Serializable']
+
+// Matches the constructor call Simple("Hello"):
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('nl.example.Simple#<init>(kotlin.String)')]
+```
+
+> **Note:** Subtype hierarchy for user-defined classes is extracted from K1 source analysis
+> and does **not** require compiled `.class` files on the aux classpath. External library
+> supertypes (e.g. Spring, JPA) do require compiled JARs for full transitive hierarchy.
+
+---
+
+
 
 `typeIs` and `matchesSig` rely on a `KotlinTypeAnalysisContext` that must be populated
 **before** PMD runs its analysis. The context holds a pre-computed index of all resolved
