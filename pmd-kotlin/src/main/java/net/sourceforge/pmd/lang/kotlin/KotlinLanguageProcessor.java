@@ -112,7 +112,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
 
     private static void writeToTempDir(List<TextFile> ktFiles, File tempDir) throws IOException {
         for (TextFile ktFile : ktFiles) {
-            String filename = ktFile.getFileId().getFileName();
+            String filename = sanitizeKtFilename(ktFile.getFileId().getFileName());
             TextFileContent content = ktFile.readContents();
             String text = content.getNormalizedText().toString();
             Files.write(new File(tempDir, filename).toPath(),
@@ -190,12 +190,18 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
 
     /**
      * Returns a valid {@code .kt} filename derived from {@code absPath}.
-     * Falls back to {@code "snippet.kt"} when the path is synthetic (e.g. the
-     * Designer's {@code "(unknown)"}) or has no {@code .kt} extension.
+     * Appends {@code .kt} when the name lacks it; falls back to {@code "snippet.kt"}
+     * for empty or path-separator-containing names (e.g. Designer's synthetic paths).
      */
     static String sanitizeKtFilename(String absPath) {
         String name = new File(absPath).getName();
-        return name.endsWith(".kt") ? name : "snippet.kt";
+        if (name.endsWith(".kt")) {
+            return name;
+        }
+        if (name.isEmpty() || name.contains(File.separator)) {
+            return "snippet.kt";
+        }
+        return name + ".kt";
     }
 
     private KotlinTypeAnnotationVisitor runSingleFileAnalysis(String filename, String sourceText) {

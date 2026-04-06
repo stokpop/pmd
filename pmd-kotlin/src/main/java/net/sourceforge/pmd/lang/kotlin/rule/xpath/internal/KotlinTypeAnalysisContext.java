@@ -97,7 +97,12 @@ public final class KotlinTypeAnalysisContext {
         Map<Integer, List<CallSiteAst>> byLine = callIndex.get(absFilePath);
         if (byLine == null) {
             // Fallback: try just the filename in case context was built from a different root
-            byLine = callIndex.get(new File(absFilePath).getName());
+            String basename = new File(absFilePath).getName();
+            byLine = callIndex.get(basename);
+            if (byLine == null && !basename.endsWith(".kt")) {
+                // PmdRuleTst uses synthetic ids without .kt; temp files are written with .kt appended
+                byLine = callIndex.get(basename + ".kt");
+            }
         }
         if (byLine == null) {
             return Collections.emptyList();
@@ -126,7 +131,11 @@ public final class KotlinTypeAnalysisContext {
     public List<DeclarationAst> declarationsAt(String absFilePath, int line) {
         Map<Integer, List<DeclarationAst>> byLine = declIndex.get(absFilePath);
         if (byLine == null) {
-            byLine = declIndex.get(new File(absFilePath).getName());
+            String basename = new File(absFilePath).getName();
+            byLine = declIndex.get(basename);
+            if (byLine == null && !basename.endsWith(".kt")) {
+                byLine = declIndex.get(basename + ".kt");
+            }
         }
         if (byLine == null) {
             return Collections.emptyList();

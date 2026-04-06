@@ -71,10 +71,16 @@ public final class KotlinTypeAnnotationVisitor {
      */
     public void annotate(KotlinNode root, String absPath) {
         String filename = new File(absPath).getName();
-        Map<Integer, List<DeclarationAst>> byLine = byFilename.get(filename);
-        if (byLine == null) {
+        Map<Integer, List<DeclarationAst>> resolved = byFilename.get(filename);
+        if (resolved == null && !filename.endsWith(".kt")) {
+            // Fallback: PmdRuleTst uses synthetic file ids without .kt extension (e.g. "file").
+            // The temp file written to disk has .kt appended, so try that name.
+            resolved = byFilename.get(filename + ".kt");
+        }
+        if (resolved == null) {
             return;
         }
+        final Map<Integer, List<DeclarationAst>> byLine = resolved;
 
         root.acceptVisitor(new KotlinVisitorBase<Void, Void>() {
 
