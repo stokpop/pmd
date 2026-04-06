@@ -476,3 +476,13 @@ public Object visitFunctionDeclaration(KtFunctionDeclaration node, Object data) 
   kotlin-type-mapper indexes all `KtProperty` nodes regardless of scope.
 - Generic type arguments are supported in signatures (e.g. `kotlin.collections.List<kotlin.String>`),
   but omitting the type argument matches the raw (erased) type.
+- **`java.lang.Object`-only methods (`finalize`, `notify`, `notifyAll`, `wait`) cannot be detected
+  on a `kotlin.Any` receiver.** The `kotlin.Any ↔ java.lang.Object` name mapping is fully implemented
+  in `TypeNameUtils.kt`, and `typeNamesEquivalent("java.lang.Object", "kotlin.Any")` returns `true`.
+  However, Kotlin's type system intentionally hides these JVM-only methods from the `kotlin.Any`
+  interface — they are not accessible in valid Kotlin code on a plain `Any` reference, so the Kotlin
+  compiler (used by kotlin-type-mapper's `CallSiteExtractor`) never resolves such calls and no call
+  site is recorded. **This is not a bug in kotlin-type-mapper; it is a fundamental Kotlin language
+  constraint.** The practical implication is that rules like `AvoidCallingFinalize` can only detect
+  `finalize()` calls when a class explicitly overrides the method (receiver type is that class, which
+  IS a resolved subtype of `java.lang.Object`) — not on bare `Any` references.
