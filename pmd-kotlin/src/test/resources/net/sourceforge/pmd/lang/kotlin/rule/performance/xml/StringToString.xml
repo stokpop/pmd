@@ -72,4 +72,21 @@ private fun reproduceFalsePositive(request: RequestData, service: Any, ex: Excep
         ]]></code>
     </test-code>
 
+
+
+    <test-code>
+        <description>Only the explicit toString() inside a multi-line constructor call should be flagged, not the constructor call itself</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>5</expected-linenumbers>
+        <code><![CDATA[class ServiceException(msg: String, cause: Throwable? = null) : Exception(msg, cause)
+
+fun bad(ioException: java.io.IOException) {
+    throw ServiceException(
+        "Exception encountered".toString(),
+        cause = ioException
+    )
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

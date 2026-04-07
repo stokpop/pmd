@@ -186,7 +186,10 @@ class Good {
                       value="category/java/performance.xml/StringToString"/>
             <property name="xpath">
                 <value><![CDATA[
-//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.String#toString()')]
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.lang.String#toString()')
+    and ./PostfixUnarySuffix/NavigationSuffix[@Identifier='toString']
+]
                 ]]></value>
             </property>
         </properties>
