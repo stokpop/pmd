@@ -49,28 +49,39 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
      */
     @Override
     public @Nullable String getModifiers() {
+        KotlinParser.KtModifiers mods = findModifiersNode();
+        if (mods == null) {
+            return null;
+        }
+        return buildModifiersString(mods);
+    }
+
+    private KotlinParser.@Nullable KtModifiers findModifiersNode() {
         for (int i = 0; i < getNumChildren(); i++) {
             KotlinNode child = getChild(i);
             if (child instanceof KotlinParser.KtModifiers) {
-                KotlinParser.KtModifiers mods = (KotlinParser.KtModifiers) child;
-                StringBuilder sb = new StringBuilder();
-                for (int j = 0; j < mods.getNumChildren(); j++) {
-                    KotlinNode mod = mods.getChild(j);
-                    if (mod instanceof KotlinParser.KtModifier) {
-                        String kw = firstModifierKeyword(mod);
-                        if (kw != null) {
-                            if (sb.length() > 0) {
-                                sb.append(' ');
-                            }
-                            sb.append(kw);
-                        }
-                    }
-                    // KtAnnotation children are skipped
-                }
-                return sb.length() > 0 ? sb.toString() : null;
+                return (KotlinParser.KtModifiers) child;
             }
         }
         return null;
+    }
+
+    private static @Nullable String buildModifiersString(KotlinParser.KtModifiers mods) {
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < mods.getNumChildren(); j++) {
+            KotlinNode mod = mods.getChild(j);
+            if (mod instanceof KotlinParser.KtModifier) {
+                String kw = firstModifierKeyword(mod);
+                if (kw != null) {
+                    if (sb.length() > 0) {
+                        sb.append(' ');
+                    }
+                    sb.append(kw);
+                }
+            }
+            // KtAnnotation children are skipped
+        }
+        return sb.length() > 0 ? sb.toString() : null;
     }
 
     /**
