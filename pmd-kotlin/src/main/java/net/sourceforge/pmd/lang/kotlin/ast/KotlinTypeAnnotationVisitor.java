@@ -13,6 +13,7 @@ import java.util.Map;
 
 import nl.stokpop.typemapper.model.AnnotationAst;
 import nl.stokpop.typemapper.model.DeclarationAst;
+import nl.stokpop.typemapper.model.DeclarationKind;
 import nl.stokpop.typemapper.model.FileAst;
 import nl.stokpop.typemapper.model.ParameterAst;
 import nl.stokpop.typemapper.model.TypedAst;
@@ -104,7 +105,7 @@ public final class KotlinTypeAnnotationVisitor {
             public Void visitClassParameter(KotlinParser.KtClassParameter node, Void data) {
                 List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
                 for (DeclarationAst decl : decls) {
-                    if ("property".equals(decl.getKind()) && decl.getType() != null) {
+                    if (DeclarationKind.PROPERTY.equals(decl.getKind()) && decl.getType() != null) {
                         node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                         setAnnotationAttributes(node, decl.getAnnotations());
                         break;
@@ -131,7 +132,7 @@ public final class KotlinTypeAnnotationVisitor {
             public Void visitCatchBlock(KotlinParser.KtCatchBlock node, Void data) {
                 List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
                 for (DeclarationAst decl : decls) {
-                    if ("catch_variable".equals(decl.getKind()) && decl.getType() != null) {
+                    if (DeclarationKind.CATCH_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
                         node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                         break;
                     }
@@ -143,7 +144,7 @@ public final class KotlinTypeAnnotationVisitor {
             public Void visitForStatement(KotlinParser.KtForStatement node, Void data) {
                 List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
                 for (DeclarationAst decl : decls) {
-                    if ("for_loop_variable".equals(decl.getKind()) && decl.getType() != null) {
+                    if (DeclarationKind.FOR_LOOP_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
                         node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                         break;
                     }
@@ -155,11 +156,11 @@ public final class KotlinTypeAnnotationVisitor {
             public Void visitClassDeclaration(KotlinParser.KtClassDeclaration node, Void data) {
                 List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
                 for (DeclarationAst decl : decls) {
-                    if ("class".equals(decl.getKind())
-                            || "data_class".equals(decl.getKind())
-                            || "sealed_class".equals(decl.getKind())
-                            || "interface".equals(decl.getKind())
-                            || "enum".equals(decl.getKind())) {
+                    if (DeclarationKind.CLASS.equals(decl.getKind())
+                            || DeclarationKind.DATA_CLASS.equals(decl.getKind())
+                            || DeclarationKind.SEALED_CLASS.equals(decl.getKind())
+                            || DeclarationKind.INTERFACE.equals(decl.getKind())
+                            || DeclarationKind.ENUM.equals(decl.getKind())) {
                         // Set @TypeName to the class's own FQN (useful in Designer + XPath)
                         node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getFqName());
                         setAnnotationAttributes(node, decl.getAnnotations());
