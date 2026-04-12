@@ -58,52 +58,68 @@ public final class KotlinTypeIsExactlyFunction extends BaseKotlinXPathFunction {
 
     @Override
     public FunctionCall makeCallExpression() {
-        return new FunctionCall() {
-            @Override
-            public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
-                if (contextNode == null) {
-                    return false;
-                }
-                String typeName = (String) arguments[0];
-                String absPath  = contextNode.getTextDocument().getFileId().getAbsolutePath();
-                int    line     = contextNode.getBeginLine();
+        return new TypeIsExactlyFunctionCall();
+    }
 
-                KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
+    private static final class TypeIsExactlyFunctionCall implements FunctionCall {
 
-                // Fast path: use node attributes set by the annotation pass.
-                if (contextNode instanceof KotlinNode) {
-                    KotlinNode kn = (KotlinNode) contextNode;
-                    String nodeType = kn.getTypeName();
-                    if (nodeType != null) {
-                        return ctx.isTypeEquivalent(typeName, nodeType);
-                    }
-                    String nodeReturnType = kn.getReturnTypeName();
-                    if (nodeReturnType != null) {
-                        return ctx.isTypeEquivalent(typeName, nodeReturnType);
-                    }
-                }
-
-                List<DeclarationAst> decls = ctx.declarationsAt(absPath, line);
-                for (DeclarationAst decl : decls) {
-                    String type = decl.getType();
-                    if (type != null && ctx.isTypeEquivalent(typeName, type)) {
-                        return true;
-                    }
-                    String returnType = decl.getReturnType();
-                    if (returnType != null && ctx.isTypeEquivalent(typeName, returnType)) {
-                        return true;
-                    }
-                }
-
-                List<CallSiteAst> calls = ctx.callSitesAt(absPath, line);
-                for (CallSiteAst call : calls) {
-                    if (ctx.isTypeEquivalent(typeName, call.getReturnType())) {
-                        return true;
-                    }
-                }
-
+        @Override
+        public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
+            if (contextNode == null) {
                 return false;
             }
-        };
+            String typeName = (String) arguments[0];
+            KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
+
+            // Fast path: use node attributes set by the annotation pass.
+            if (contextNode instanceof KotlinNode
+                    && matchesNodeAttribute((KotlinNode) contextNode, typeName, ctx)) {
+                return true;
+            }
+
+            String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
+            int line = contextNode.getBeginLine();
+
+            return matchesAnyDeclaration(ctx.declarationsAt(absPath, line), typeName, ctx)
+                    || matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
+        }
+
+        private static boolean matchesNodeAttribute(
+                KotlinNode node, String typeName, KotlinTypeAnalysisContext ctx) {
+            String nodeType = node.getTypeName();
+            if (nodeType != null) {
+                return ctx.isTypeEquivalent(typeName, nodeType);
+            }
+            String returnType = node.getReturnTypeName();
+            if (returnType != null) {
+                return ctx.isTypeEquivalent(typeName, returnType);
+            }
+            return false;
+        }
+
+        private static boolean matchesAnyDeclaration(
+                List<DeclarationAst> decls, String typeName, KotlinTypeAnalysisContext ctx) {
+            for (DeclarationAst decl : decls) {
+                String type = decl.getType();
+                if (type != null && ctx.isTypeEquivalent(typeName, type)) {
+                    return true;
+                }
+                String returnType = decl.getReturnType();
+                if (returnType != null && ctx.isTypeEquivalent(typeName, returnType)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static boolean matchesAnyCallSite(
+                List<CallSiteAst> calls, String typeName, KotlinTypeAnalysisContext ctx) {
+            for (CallSiteAst call : calls) {
+                if (ctx.isTypeEquivalent(typeName, call.getReturnType())) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
