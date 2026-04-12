@@ -71,36 +71,46 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
 
     @Override
     public FunctionCall makeCallExpression() {
-        return new FunctionCall() {
-            @Override
-            public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
-                if (!(contextNode instanceof KotlinNode)) {
-                    return false;
-                }
-                String className = (String) arguments[0];
-                String simpleName = simpleNameOf(className);
+        return new HasAnnotationFunctionCall();
+    }
 
-                KotlinNode declNode = (KotlinNode) contextNode;
+    private static final class HasAnnotationFunctionCall implements FunctionCall {
 
-                // Path 1 — @TypeName on UnescapedAnnotation children (set by
-                // KotlinTypeAnnotationVisitor when kotlin-type-mapper ran and resolved FQNs)
-                if (checkAnnotationChildrenByTypeName(declNode, className, simpleName)) {
+        @Override
+        public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
+            if (!(contextNode instanceof KotlinNode)) {
+                return false;
+            }
+            String className = (String) arguments[0];
+            String simpleName = simpleNameOf(className);
+            KotlinNode declNode = (KotlinNode) contextNode;
+
+            // Path 1 — @TypeName on UnescapedAnnotation children (set by
+            // KotlinTypeAnnotationVisitor when kotlin-type-mapper ran and resolved FQNs)
+            if (checkAnnotationChildrenByTypeName(declNode, className, simpleName)) {
+                return true;
+            }
+
+            // Path 2 — ANNOTATION_NAMES_KEY comma list on the declaration node
+            if (matchesAnnotationFqNames(declNode, className, simpleName)) {
+                return true;
+            }
+
+            // Path 3 — source-text fallback: read the annotation name as written
+            // in source via text region. Only used when className is a simple (unqualified)
+            // name — if a FQN is given, FQN resolution via paths 1/2 is required.
+            return !className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName);
+        }
+
+        private static boolean matchesAnnotationFqNames(
+                KotlinNode declNode, String className, String simpleName) {
+            for (String fqn : declNode.getAnnotationFqNames()) {
+                if (fqn.equals(className) || simpleNameOf(fqn).equals(simpleName)) {
                     return true;
                 }
-
-                // Path 2 — ANNOTATION_NAMES_KEY comma list on the declaration node
-                for (String fqn : declNode.getAnnotationFqNames()) {
-                    if (fqn.equals(className) || simpleNameOf(fqn).equals(simpleName)) {
-                        return true;
-                    }
-                }
-
-                // Path 3 — source-text fallback: read the annotation name as written
-                // in source via text region. Only used when className is a simple (unqualified)
-                // name — if a FQN is given, FQN resolution via paths 1/2 is required.
-                return !className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName);
             }
-        };
+            return false;
+        }
     }
 
     /**
