@@ -49,4 +49,19 @@ fun doSomething() {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>catch with fully-qualified java.lang.Throwable is also a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>4</expected-linenumbers>
+        <code><![CDATA[
+fun doSomething() {
+    try {
+        riskyOp()
+    } catch (e: java.lang.Throwable) {
+        e.printStackTrace()
+    }
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

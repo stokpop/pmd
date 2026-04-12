@@ -55,4 +55,31 @@ class Resource : AutoCloseable {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>super.finalize() inside an overriding finalize() method is ok - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class MyResource {
+    override fun finalize() {
+        super.finalize() // ok: legitimate super call within the override
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>finalize() called on another object inside a finalize() override is still a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>5</expected-linenumbers>
+        <code><![CDATA[
+class Bad {
+    private val other = Bad()
+    override fun finalize() {
+        super.finalize() // ok
+        other.finalize() // violation: explicit call on another object
+    }
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

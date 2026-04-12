@@ -33,6 +33,12 @@ Rules to detect constructs that are either broken, extremely confusing or prone 
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Object#finalize()')]
+    (: it's ok to call super.finalize() from inside an overriding finalize() :)
+    [not(PrimaryExpression/SuperExpression
+         and ancestor::FunctionDeclaration[
+             SimpleIdentifier/T-Identifier[@Text = 'finalize']
+             and not(FunctionValueParameters/FunctionValueParameter)
+         ])]
                 ]]></value>
             </property>
         </properties>
