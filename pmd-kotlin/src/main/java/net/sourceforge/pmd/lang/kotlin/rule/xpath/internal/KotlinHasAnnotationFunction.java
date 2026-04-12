@@ -5,6 +5,8 @@
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
@@ -44,6 +46,9 @@ import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
 public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
 
     public static final KotlinHasAnnotationFunction INSTANCE = new KotlinHasAnnotationFunction();
+
+    private static final Logger LOG = LoggerFactory.getLogger(KotlinHasAnnotationFunction.class);
+    private static final String UNESCAPED_ANNOTATION = "UnescapedAnnotation";
 
     private KotlinHasAnnotationFunction() {
         super("hasAnnotation");
@@ -93,11 +98,7 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
                 // Path 3 — source-text fallback: read the annotation name as written
                 // in source via text region. Only used when className is a simple (unqualified)
                 // name — if a FQN is given, FQN resolution via paths 1/2 is required.
-                if (!className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName)) {
-                    return true;
-                }
-
-                return false;
+                return !className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName);
             }
         };
     }
@@ -125,7 +126,7 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
                 || "Block".equals(xpathName)) {
             return false;
         }
-        if ("UnescapedAnnotation".equals(xpathName)) {
+        if (UNESCAPED_ANNOTATION.equals(xpathName)) {
             String typeName = node.getUserMap().get(KotlinNode.TYPE_NAME_KEY);
             if (typeName != null) {
                 return typeName.equals(className) || simpleNameOf(typeName).equals(simpleName);
@@ -164,16 +165,10 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
                 || "Block".equals(xpathName)) {
             return false;
         }
-        if ("UnescapedAnnotation".equals(xpathName)) {
+        if (UNESCAPED_ANNOTATION.equals(xpathName)) {
             String writtenName = getAnnotationSourceText((KotlinParser.KtUnescapedAnnotation) node);
-            if (writtenName != null) {
-                // exact match (e.g. written as FQCN), or simple-name cross-match
-                if (writtenName.equals(className)
-                        || simpleNameOf(writtenName).equals(simpleName)) {
-                    return true;
-                }
-            }
-            return false;
+            return writtenName != null
+                    && (writtenName.equals(className) || simpleNameOf(writtenName).equals(simpleName));
         }
         for (int i = 0; i < node.getNumChildren(); i++) {
             if (annotationNodeMatchesBySourceText(node.getChild(i), className, simpleName)) {
@@ -209,7 +204,8 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
                     return userType.getTextDocument()
                             .sliceOriginalText(userType.getTextRegion())
                             .toString();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    LOG.debug("Could not slice source text for annotation node", e);
                     return null;
                 }
             }

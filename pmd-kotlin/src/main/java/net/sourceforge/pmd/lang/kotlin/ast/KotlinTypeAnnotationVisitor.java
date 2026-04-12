@@ -217,6 +217,7 @@ public final class KotlinTypeAnnotationVisitor {
      * Sets {@link KotlinNode#TYPE_NAME_KEY} on a single {@code KtDelegationSpecifier}
      * by extracting the written type name from its contained {@code KtUserType}.
      */
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static void annotateDelegationSpecifier(KotlinParser.KtDelegationSpecifier spec,
             Map<String, String> simpleToFqn) {
         KotlinParser.KtUserType userType = findUserTypeInDelegationSpecifier(spec);
@@ -398,6 +399,7 @@ public final class KotlinTypeAnnotationVisitor {
      * {@code KtUserType} node. Returns e.g. {@code "Column"} or
      * {@code "javax.persistence.Column"}, or {@code null} on failure.
      */
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static String getAnnotationWrittenName(KotlinParser.KtUnescapedAnnotation annNode) {
         KotlinParser.KtUserType userType = findUserType(annNode);
         if (userType == null) {

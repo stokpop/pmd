@@ -6,6 +6,7 @@ package net.sourceforge.pmd.lang.kotlin;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ import nl.stokpop.typemapper.model.TypedAst;
 public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguagePropertyBundle> {
 
     private static final Logger LOG = LoggerFactory.getLogger(KotlinLanguageProcessor.class);
+    private static final String FILE_PROTOCOL = "file";
 
     /** Populated in {@link #launchAnalysis} before any file is parsed. */
     private volatile KotlinTypeAnnotationVisitor annotationVisitor;
@@ -78,6 +80,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         return super.launchAnalysis(task);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private void runTypeAnalysis(List<TextFile> allFiles) {
         List<TextFile> ktFiles = new ArrayList<>();
         for (TextFile f : allFiles) {
@@ -146,10 +149,10 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         if (cl instanceof java.net.URLClassLoader) {
             List<File> entries = new ArrayList<>();
             for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
-                if ("file".equals(url.getProtocol())) {
+                if (FILE_PROTOCOL.equals(url.getProtocol())) {
                     try {
                         entries.add(new File(url.toURI()));
-                    } catch (Exception e) {
+                    } catch (URISyntaxException e) {
                         LOG.debug("Could not convert classpath URL to File: {}", url);
                     }
                 }
@@ -202,6 +205,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         return name + ".kt";
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private KotlinTypeAnnotationVisitor runSingleFileAnalysis(String filename, String sourceText) {
         File tempDir = null;
         try {

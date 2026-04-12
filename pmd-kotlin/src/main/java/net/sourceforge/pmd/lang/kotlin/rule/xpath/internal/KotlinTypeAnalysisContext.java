@@ -8,6 +8,7 @@ import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,8 @@ import nl.stokpop.typemapper.model.TypeNameUtilsKt;
  * (absolute file path, line number) for fast lookup during XPath function evaluation.
  */
 public final class KotlinTypeAnalysisContext {
+
+    private static final String KT_EXTENSION = ".kt";
 
     private static final KotlinTypeAnalysisContext EMPTY = new KotlinTypeAnalysisContext(
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
@@ -99,9 +102,9 @@ public final class KotlinTypeAnalysisContext {
             // Fallback: try just the filename in case context was built from a different root
             String basename = new File(absFilePath).getName();
             byLine = callIndex.get(basename);
-            if (byLine == null && !basename.endsWith(".kt")) {
+            if (byLine == null && !basename.endsWith(KT_EXTENSION)) {
                 // PmdRuleTst uses synthetic ids without .kt; temp files are written with .kt appended
-                byLine = callIndex.get(basename + ".kt");
+                byLine = callIndex.get(basename + KT_EXTENSION);
             }
         }
         if (byLine == null) {
@@ -133,8 +136,8 @@ public final class KotlinTypeAnalysisContext {
         if (byLine == null) {
             String basename = new File(absFilePath).getName();
             byLine = declIndex.get(basename);
-            if (byLine == null && !basename.endsWith(".kt")) {
-                byLine = declIndex.get(basename + ".kt");
+            if (byLine == null && !basename.endsWith(KT_EXTENSION)) {
+                byLine = declIndex.get(basename + KT_EXTENSION);
             }
         }
         if (byLine == null) {
@@ -193,7 +196,7 @@ public final class KotlinTypeAnalysisContext {
         // BFS over transitive supertypes of actualType.
         String rawActual = substringBeforeAngle(actualType);
         Set<String> visited = new HashSet<>();
-        ArrayDeque<String> queue = new ArrayDeque<>();
+        Deque<String> queue = new ArrayDeque<>();
         queue.add(rawActual);
         while (!queue.isEmpty()) {
             String current = queue.poll();
