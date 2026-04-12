@@ -88,95 +88,106 @@ public final class KotlinTypeAnnotationVisitor {
         }
         final Map<Integer, List<DeclarationAst>> byLine = resolved;
 
-        root.acceptVisitor(new KotlinVisitorBase<Void, Void>() {
+        root.acceptVisitor(new AnnotatingVisitor(byLine), null);
+    }
 
-            @Override
-            public Void visitPropertyDeclaration(KotlinParser.KtPropertyDeclaration node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (decl.getType() != null) {
-                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
-                        setAnnotationAttributes(node, decl.getAnnotations());
-                        break;
-                    }
+    /**
+     * Visitor that annotates PMD AST nodes with type/annotation attributes from
+     * the kotlin-type-mapper data indexed by line number.
+     */
+    private static final class AnnotatingVisitor extends KotlinVisitorBase<Void, Void> {
+
+        private final Map<Integer, List<DeclarationAst>> byLine;
+
+        AnnotatingVisitor(Map<Integer, List<DeclarationAst>> byLine) {
+            this.byLine = byLine;
+        }
+
+        @Override
+        public Void visitPropertyDeclaration(KotlinParser.KtPropertyDeclaration node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (decl.getType() != null) {
+                    node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                    setAnnotationAttributes(node, decl.getAnnotations());
+                    break;
                 }
-                return visitChildren(node, data);
             }
+            return visitChildren(node, data);
+        }
 
-            // Primary constructor val/var parameters (e.g. "class Foo(val name: String)")
-            // are KtClassParameter nodes in the AST, not KtPropertyDeclaration.
-            // kotlin-type-mapper emits them as kind="property" with a type field.
-            @Override
-            public Void visitClassParameter(KotlinParser.KtClassParameter node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (DeclarationKind.PROPERTY.equals(decl.getKind()) && decl.getType() != null) {
-                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
-                        setAnnotationAttributes(node, decl.getAnnotations());
-                        break;
-                    }
+        // Primary constructor val/var parameters (e.g. "class Foo(val name: String)")
+        // are KtClassParameter nodes in the AST, not KtPropertyDeclaration.
+        // kotlin-type-mapper emits them as kind="property" with a type field.
+        @Override
+        public Void visitClassParameter(KotlinParser.KtClassParameter node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (DeclarationKind.PROPERTY.equals(decl.getKind()) && decl.getType() != null) {
+                    node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                    setAnnotationAttributes(node, decl.getAnnotations());
+                    break;
                 }
-                return visitChildren(node, data);
             }
+            return visitChildren(node, data);
+        }
 
-            @Override
-            public Void visitFunctionDeclaration(KotlinParser.KtFunctionDeclaration node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (decl.getReturnType() != null) {
-                        node.getUserMap().set(KotlinNode.RETURN_TYPE_KEY, decl.getReturnType());
-                        setAnnotationAttributes(node, decl.getAnnotations());
-                        setFunctionParameterTypes(node, decl.getParameters());
-                        break;
-                    }
+        @Override
+        public Void visitFunctionDeclaration(KotlinParser.KtFunctionDeclaration node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (decl.getReturnType() != null) {
+                    node.getUserMap().set(KotlinNode.RETURN_TYPE_KEY, decl.getReturnType());
+                    setAnnotationAttributes(node, decl.getAnnotations());
+                    setFunctionParameterTypes(node, decl.getParameters());
+                    break;
                 }
-                return visitChildren(node, data);
             }
+            return visitChildren(node, data);
+        }
 
-            @Override
-            public Void visitCatchBlock(KotlinParser.KtCatchBlock node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (DeclarationKind.CATCH_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
-                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
-                        break;
-                    }
+        @Override
+        public Void visitCatchBlock(KotlinParser.KtCatchBlock node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (DeclarationKind.CATCH_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
+                    node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                    break;
                 }
-                return visitChildren(node, data);
             }
+            return visitChildren(node, data);
+        }
 
-            @Override
-            public Void visitForStatement(KotlinParser.KtForStatement node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (DeclarationKind.FOR_LOOP_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
-                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
-                        break;
-                    }
+        @Override
+        public Void visitForStatement(KotlinParser.KtForStatement node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (DeclarationKind.FOR_LOOP_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
+                    node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
+                    break;
                 }
-                return visitChildren(node, data);
             }
+            return visitChildren(node, data);
+        }
 
-            @Override
-            public Void visitClassDeclaration(KotlinParser.KtClassDeclaration node, Void data) {
-                List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
-                for (DeclarationAst decl : decls) {
-                    if (DeclarationKind.CLASS.equals(decl.getKind())
-                            || DeclarationKind.DATA_CLASS.equals(decl.getKind())
-                            || DeclarationKind.SEALED_CLASS.equals(decl.getKind())
-                            || DeclarationKind.INTERFACE.equals(decl.getKind())
-                            || DeclarationKind.ENUM.equals(decl.getKind())) {
-                        // Set @TypeName to the class's own FQN (useful in Designer + XPath)
-                        node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getFqName());
-                        setAnnotationAttributes(node, decl.getAnnotations());
-                        setDelegationSpecifierTypes(node, decl.getSuperTypes());
-                        break;
-                    }
+        @Override
+        public Void visitClassDeclaration(KotlinParser.KtClassDeclaration node, Void data) {
+            List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
+            for (DeclarationAst decl : decls) {
+                if (DeclarationKind.CLASS.equals(decl.getKind())
+                        || DeclarationKind.DATA_CLASS.equals(decl.getKind())
+                        || DeclarationKind.SEALED_CLASS.equals(decl.getKind())
+                        || DeclarationKind.INTERFACE.equals(decl.getKind())
+                        || DeclarationKind.ENUM.equals(decl.getKind())) {
+                    // Set @TypeName to the class's own FQN (useful in Designer + XPath)
+                    node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getFqName());
+                    setAnnotationAttributes(node, decl.getAnnotations());
+                    setDelegationSpecifierTypes(node, decl.getSuperTypes());
+                    break;
                 }
-                return visitChildren(node, data);
             }
-
-        }, null);
+            return visitChildren(node, data);
+        }
     }
 
     /**
@@ -193,22 +204,40 @@ public final class KotlinTypeAnnotationVisitor {
         for (String fqn : superTypes) {
             simpleToFqn.put(simpleNameOf(fqn), fqn);
         }
+        KotlinParser.KtDelegationSpecifiers specsNode = findDelegationSpecifiersNode(classNode);
+        if (specsNode != null) {
+            annotateDelegationSpecifiersNode(specsNode, simpleToFqn);
+        }
+    }
+
+    private static KotlinParser.KtDelegationSpecifiers findDelegationSpecifiersNode(
+            KotlinParser.KtClassDeclaration classNode) {
         for (int i = 0; i < classNode.getNumChildren(); i++) {
             KotlinNode child = classNode.getChild(i);
             if (child instanceof KotlinParser.KtDelegationSpecifiers) {
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    KotlinNode spec = child.getChild(j);
-                    if (spec instanceof KotlinParser.KtAnnotatedDelegationSpecifier) {
-                        for (int k = 0; k < spec.getNumChildren(); k++) {
-                            KotlinNode inner = spec.getChild(k);
-                            if (inner instanceof KotlinParser.KtDelegationSpecifier) {
-                                annotateDelegationSpecifier(
-                                        (KotlinParser.KtDelegationSpecifier) inner, simpleToFqn);
-                            }
-                        }
-                    }
-                }
-                break;
+                return (KotlinParser.KtDelegationSpecifiers) child;
+            }
+        }
+        return null;
+    }
+
+    private static void annotateDelegationSpecifiersNode(KotlinParser.KtDelegationSpecifiers specsNode,
+            Map<String, String> simpleToFqn) {
+        for (int j = 0; j < specsNode.getNumChildren(); j++) {
+            KotlinNode spec = specsNode.getChild(j);
+            if (spec instanceof KotlinParser.KtAnnotatedDelegationSpecifier) {
+                annotateAnnotatedDelegationSpecifier(
+                        (KotlinParser.KtAnnotatedDelegationSpecifier) spec, simpleToFqn);
+            }
+        }
+    }
+
+    private static void annotateAnnotatedDelegationSpecifier(
+            KotlinParser.KtAnnotatedDelegationSpecifier annotated, Map<String, String> simpleToFqn) {
+        for (int k = 0; k < annotated.getNumChildren(); k++) {
+            KotlinNode inner = annotated.getChild(k);
+            if (inner instanceof KotlinParser.KtDelegationSpecifier) {
+                annotateDelegationSpecifier((KotlinParser.KtDelegationSpecifier) inner, simpleToFqn);
             }
         }
     }
@@ -254,11 +283,8 @@ public final class KotlinTypeAnnotationVisitor {
                 return (KotlinParser.KtUserType) child;
             }
             if (child instanceof KotlinParser.KtConstructorInvocation) {
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    if (child.getChild(j) instanceof KotlinParser.KtUserType) {
-                        return (KotlinParser.KtUserType) child.getChild(j);
-                    }
-                }
+                return findUserTypeInConstructorInvocation(
+                        (KotlinParser.KtConstructorInvocation) child);
             }
         }
         return null;
@@ -274,21 +300,34 @@ public final class KotlinTypeAnnotationVisitor {
         if (parameters.isEmpty()) {
             return;
         }
+        KotlinParser.KtFunctionValueParameters paramsNode = findFunctionValueParametersNode(funcNode);
+        if (paramsNode != null) {
+            annotateParameterNodes(paramsNode, parameters);
+        }
+    }
+
+    private static KotlinParser.KtFunctionValueParameters findFunctionValueParametersNode(
+            KotlinParser.KtFunctionDeclaration funcNode) {
         for (int i = 0; i < funcNode.getNumChildren(); i++) {
             KotlinNode child = funcNode.getChild(i);
             if (child instanceof KotlinParser.KtFunctionValueParameters) {
-                int paramIdx = 0;
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    KotlinNode sub = child.getChild(j);
-                    if (sub instanceof KotlinParser.KtFunctionValueParameter && paramIdx < parameters.size()) {
-                        String type = parameters.get(paramIdx).getType();
-                        if (type != null) {
-                            sub.getUserMap().set(KotlinNode.TYPE_NAME_KEY, type);
-                        }
-                        paramIdx++;
-                    }
+                return (KotlinParser.KtFunctionValueParameters) child;
+            }
+        }
+        return null;
+    }
+
+    private static void annotateParameterNodes(KotlinParser.KtFunctionValueParameters paramsNode,
+            List<ParameterAst> parameters) {
+        int paramIdx = 0;
+        for (int j = 0; j < paramsNode.getNumChildren(); j++) {
+            KotlinNode sub = paramsNode.getChild(j);
+            if (sub instanceof KotlinParser.KtFunctionValueParameter && paramIdx < parameters.size()) {
+                String type = parameters.get(paramIdx).getType();
+                if (type != null) {
+                    sub.getUserMap().set(KotlinNode.TYPE_NAME_KEY, type);
                 }
-                break;
+                paramIdx++;
             }
         }
     }
@@ -375,20 +414,30 @@ public final class KotlinTypeAnnotationVisitor {
         for (int i = 0; i < ann.getNumChildren(); i++) {
             KotlinNode child = ann.getChild(i);
             if (child instanceof KotlinParser.KtSingleAnnotation) {
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    KotlinNode sub = child.getChild(j);
-                    if (sub instanceof KotlinParser.KtUnescapedAnnotation) {
-                        result.add((KotlinParser.KtUnescapedAnnotation) sub);
-                        break;
-                    }
-                }
+                collectFromSingleAnnotation((KotlinParser.KtSingleAnnotation) child, result);
             } else if (child instanceof KotlinParser.KtMultiAnnotation) {
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    KotlinNode sub = child.getChild(j);
-                    if (sub instanceof KotlinParser.KtUnescapedAnnotation) {
-                        result.add((KotlinParser.KtUnescapedAnnotation) sub);
-                    }
-                }
+                collectFromMultiAnnotation((KotlinParser.KtMultiAnnotation) child, result);
+            }
+        }
+    }
+
+    private static void collectFromSingleAnnotation(KotlinParser.KtSingleAnnotation singleAnn,
+            List<KotlinParser.KtUnescapedAnnotation> result) {
+        for (int j = 0; j < singleAnn.getNumChildren(); j++) {
+            KotlinNode sub = singleAnn.getChild(j);
+            if (sub instanceof KotlinParser.KtUnescapedAnnotation) {
+                result.add((KotlinParser.KtUnescapedAnnotation) sub);
+                break;
+            }
+        }
+    }
+
+    private static void collectFromMultiAnnotation(KotlinParser.KtMultiAnnotation multiAnn,
+            List<KotlinParser.KtUnescapedAnnotation> result) {
+        for (int j = 0; j < multiAnn.getNumChildren(); j++) {
+            KotlinNode sub = multiAnn.getChild(j);
+            if (sub instanceof KotlinParser.KtUnescapedAnnotation) {
+                result.add((KotlinParser.KtUnescapedAnnotation) sub);
             }
         }
     }
@@ -423,11 +472,18 @@ public final class KotlinTypeAnnotationVisitor {
                 return (KotlinParser.KtUserType) child;
             }
             if (child instanceof KotlinParser.KtConstructorInvocation) {
-                for (int j = 0; j < child.getNumChildren(); j++) {
-                    if (child.getChild(j) instanceof KotlinParser.KtUserType) {
-                        return (KotlinParser.KtUserType) child.getChild(j);
-                    }
-                }
+                return findUserTypeInConstructorInvocation(
+                        (KotlinParser.KtConstructorInvocation) child);
+            }
+        }
+        return null;
+    }
+
+    private static KotlinParser.KtUserType findUserTypeInConstructorInvocation(
+            KotlinParser.KtConstructorInvocation ctorInvocation) {
+        for (int j = 0; j < ctorInvocation.getNumChildren(); j++) {
+            if (ctorInvocation.getChild(j) instanceof KotlinParser.KtUserType) {
+                return (KotlinParser.KtUserType) ctorInvocation.getChild(j);
             }
         }
         return null;
