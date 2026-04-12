@@ -104,8 +104,6 @@ public final class KotlinModifiersFunction extends BaseKotlinXPathFunction {
         };
     }
 
-    // -------------------------------------------------------------------------
-
     private static KotlinParser.KtModifiers findModifiers(KotlinNode declNode) {
         for (int i = 0; i < declNode.getNumChildren(); i++) {
             KotlinNode child = declNode.getChild(i);

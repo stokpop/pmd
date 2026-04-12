@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import nl.stokpop.typemapper.model.AnnotationAst;
 import nl.stokpop.typemapper.model.DeclarationAst;
 import nl.stokpop.typemapper.model.DeclarationKind;
@@ -44,6 +47,8 @@ import nl.stokpop.typemapper.model.TypedAst;
  * a temporary directory or analyzed from their original location.
  */
 public final class KotlinTypeAnnotationVisitor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(KotlinTypeAnnotationVisitor.class);
 
     /** Map from base filename (e.g. "Foo.kt") → per-line declarations index. */
     private final Map<String, Map<Integer, List<DeclarationAst>>> byFilename;
@@ -230,8 +235,8 @@ public final class KotlinTypeAnnotationVisitor {
             if (fqn != null) {
                 spec.getUserMap().set(KotlinNode.TYPE_NAME_KEY, fqn);
             }
-        } catch (Exception ignored) {
-            // defensive
+        } catch (Exception e) {
+            LOG.debug("Could not read text region for delegation specifier in {}", spec, e);
         }
     }
 
@@ -274,14 +279,12 @@ public final class KotlinTypeAnnotationVisitor {
                 int paramIdx = 0;
                 for (int j = 0; j < child.getNumChildren(); j++) {
                     KotlinNode sub = child.getChild(j);
-                    if (sub instanceof KotlinParser.KtFunctionValueParameter) {
-                        if (paramIdx < parameters.size()) {
-                            String type = parameters.get(paramIdx).getType();
-                            if (type != null) {
-                                sub.getUserMap().set(KotlinNode.TYPE_NAME_KEY, type);
-                            }
-                            paramIdx++;
+                    if (sub instanceof KotlinParser.KtFunctionValueParameter && paramIdx < parameters.size()) {
+                        String type = parameters.get(paramIdx).getType();
+                        if (type != null) {
+                            sub.getUserMap().set(KotlinNode.TYPE_NAME_KEY, type);
                         }
+                        paramIdx++;
                     }
                 }
                 break;
@@ -339,9 +342,6 @@ public final class KotlinTypeAnnotationVisitor {
             }
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
 
     /**
      * Collects all {@code KtUnescapedAnnotation} nodes from the direct modifiers
@@ -407,7 +407,8 @@ public final class KotlinTypeAnnotationVisitor {
             return userType.getTextDocument()
                     .sliceOriginalText(userType.getTextRegion())
                     .toString();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            LOG.debug("Could not read text region for annotation in {}", annNode, e);
             return null;
         }
     }

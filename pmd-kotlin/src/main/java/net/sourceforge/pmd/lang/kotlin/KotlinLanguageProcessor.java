@@ -56,7 +56,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
     private static final Logger LOG = LoggerFactory.getLogger(KotlinLanguageProcessor.class);
 
     /** Populated in {@link #launchAnalysis} before any file is parsed. */
-    private volatile KotlinTypeAnnotationVisitor annotationVisitor = null;
+    private volatile KotlinTypeAnnotationVisitor annotationVisitor;
 
     private final KotlinHandler baseHandler;
     private final JvmLanguagePropertyBundle jvmBundle;
@@ -77,8 +77,6 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         runTypeAnalysis(task.getFiles());
         return super.launchAnalysis(task);
     }
-
-    // -------------------------------------------------------------------------
 
     private void runTypeAnalysis(List<TextFile> allFiles) {
         List<TextFile> ktFiles = new ArrayList<>();
@@ -224,8 +222,6 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             }
         }
     }
-
-    // -------------------------------------------------------------------------
 
     /**
      * Wraps {@link KotlinHandler#getParser()} to run the type annotation visitor

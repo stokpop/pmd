@@ -102,8 +102,6 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
         };
     }
 
-    // -------------------------------------------------------------------------
-
     /**
      * Walks children of {@code declNode} (stopping at body boundaries) looking for
      * {@code UnescapedAnnotation} nodes whose {@code @TypeName} (FQN set by
