@@ -4,8 +4,6 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
-import java.util.List;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.Node;
@@ -64,52 +62,50 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
 
     @Override
     public FunctionCall makeCallExpression() {
-        return new FunctionCall() {
-            @Override
-            public void staticInit(Object[] arguments) throws XPathFunctionException {
-                // Validate the signature at expression-build time so users get an early error.
-                try {
-                    SignatureMatcherKt.parseSig((String) arguments[0]);
-                } catch (IllegalArgumentException e) {
-                    throw new XPathFunctionException(
-                            "Invalid matchesSig argument: " + e.getMessage(), e);
-                }
+        return new MatchesSigFunctionCall();
+    }
+
+    private static final class MatchesSigFunctionCall implements FunctionCall {
+        @Override
+        public void staticInit(Object[] arguments) throws XPathFunctionException {
+            try {
+                SignatureMatcherKt.parseSig((String) arguments[0]);
+            } catch (IllegalArgumentException e) {
+                throw new XPathFunctionException(
+                        "Invalid matchesSig argument: " + e.getMessage(), e);
             }
+        }
 
-            @Override
-            public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
-                if (contextNode == null) {
-                    return false;
-                }
-                String sig        = (String) arguments[0];
-                String absPath      = contextNode.getTextDocument().getFileId().getAbsolutePath();
-                int    beginLine    = contextNode.getBeginLine();
-                int    beginCol     = contextNode.getBeginColumn();
-                int    endCol       = contextNode.getEndColumn();
-                // For single-line nodes the column span is meaningful across both the exact
-                // line and the ±1 fallback lines returned by callSitesAt.  For multi-line
-                // nodes endCol is on the closing line, so cross-line span comparison breaks.
-                boolean singleLine  = (contextNode.getEndLine() == beginLine);
-
-                KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-                List<CallSiteAst> calls = ctx.callSitesAt(absPath, beginLine);
-                for (CallSiteAst call : calls) {
-                    // Require the call's column to fall within the node's column span when:
-                    //  a) the call is on the exact same line (prevents sibling nodes), or
-                    //  b) the node is single-line and the call arrived via ±1 fallback
-                    //     (prevents adjacent expressions from matching by spillover).
-                    if (call.getLine() == beginLine || singleLine) {
-                        int col = call.getColumn();
-                        if (col < beginCol || col > endCol) {
-                            continue;
-                        }
-                    }
-                    if (SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf)) {
-                        return true;
-                    }
-                }
+        @Override
+        public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
+            if (contextNode == null) {
                 return false;
             }
-        };
+            String sig       = (String) arguments[0];
+            String absPath   = contextNode.getTextDocument().getFileId().getAbsolutePath();
+            int beginLine    = contextNode.getBeginLine();
+            int beginCol     = contextNode.getBeginColumn();
+            int endCol       = contextNode.getEndColumn();
+            boolean singleLine = (contextNode.getEndLine() == beginLine);
+
+            KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
+            for (CallSiteAst call : ctx.callSitesAt(absPath, beginLine)) {
+                if (matchesCallSite(call, beginLine, beginCol, endCol, singleLine)
+                        && SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static boolean matchesCallSite(CallSiteAst call,
+                                               int beginLine, int beginCol, int endCol,
+                                               boolean singleLine) {
+            if (call.getLine() == beginLine || singleLine) {
+                int col = call.getColumn();
+                return col >= beginCol && col <= endCol;
+            }
+            return true;
+        }
     }
 }

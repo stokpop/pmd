@@ -74,34 +74,36 @@ public final class KotlinModifiersFunction extends BaseKotlinXPathFunction {
 
     @Override
     public FunctionCall makeCallExpression() {
-        return new FunctionCall() {
-            @Override
-            public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
-                if (!(contextNode instanceof KotlinNode)) {
-                    return Collections.emptyList();
-                }
-                KotlinNode declNode = (KotlinNode) contextNode;
+        return new ModifiersFunctionCall();
+    }
 
-                // Find the Modifiers child
-                KotlinParser.KtModifiers modifiers = findModifiers(declNode);
-                if (modifiers == null) {
-                    return Collections.emptyList();
-                }
-
-                List<String> result = new ArrayList<>();
-                for (int i = 0; i < modifiers.getNumChildren(); i++) {
-                    KotlinNode child = modifiers.getChild(i);
-                    if (child instanceof KotlinParser.KtModifier) {
-                        String text = getModifierText((KotlinParser.KtModifier) child);
-                        if (text != null) {
-                            result.add(text);
-                        }
-                    }
-                    // KtAnnotation children are skipped
-                }
-                return result;
+    private static final class ModifiersFunctionCall implements FunctionCall {
+        @Override
+        public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
+            if (!(contextNode instanceof KotlinNode)) {
+                return Collections.emptyList();
             }
-        };
+            KotlinParser.KtModifiers modifiers = findModifiers((KotlinNode) contextNode);
+            if (modifiers == null) {
+                return Collections.emptyList();
+            }
+            return collectModifierTexts(modifiers);
+        }
+    }
+
+    private static List<String> collectModifierTexts(KotlinParser.KtModifiers modifiers) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < modifiers.getNumChildren(); i++) {
+            KotlinNode child = modifiers.getChild(i);
+            if (child instanceof KotlinParser.KtModifier) {
+                String text = getModifierText((KotlinParser.KtModifier) child);
+                if (text != null) {
+                    result.add(text);
+                }
+            }
+            // KtAnnotation children are skipped
+        }
+        return result;
     }
 
     private static KotlinParser.KtModifiers findModifiers(KotlinNode declNode) {

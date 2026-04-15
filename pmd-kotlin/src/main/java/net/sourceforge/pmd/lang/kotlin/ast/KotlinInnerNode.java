@@ -127,39 +127,43 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
      */
     @Override
     public Iterator<Attribute> getXPathAttributesIterator() {
-        Iterator<Attribute> base = super.getXPathAttributesIterator();
-        return new Iterator<Attribute>() {
-            private Attribute pending;
+        return new NonNullAttributeIterator(super.getXPathAttributesIterator());
+    }
 
-            {
-                advance();
-            }
+    /** Filters out XPath attributes whose value is {@code null}. */
+    private static final class NonNullAttributeIterator implements Iterator<Attribute> {
+        private final Iterator<Attribute> base;
+        private Attribute pending;
 
-            private void advance() {
-                pending = null;
-                while (base.hasNext()) {
-                    Attribute attr = base.next();
-                    if (attr.getValue() != null) {
-                        pending = attr;
-                        break;
-                    }
+        NonNullAttributeIterator(Iterator<Attribute> base) {
+            this.base = base;
+            advance();
+        }
+
+        private void advance() {
+            pending = null;
+            while (base.hasNext()) {
+                Attribute attr = base.next();
+                if (attr.getValue() != null) {
+                    pending = attr;
+                    break;
                 }
             }
+        }
 
-            @Override
-            public boolean hasNext() {
-                return pending != null;
-            }
+        @Override
+        public boolean hasNext() {
+            return pending != null;
+        }
 
-            @Override
-            public Attribute next() {
-                if (pending == null) {
-                    throw new NoSuchElementException();
-                }
-                Attribute result = pending;
-                advance();
-                return result;
+        @Override
+        public Attribute next() {
+            if (pending == null) {
+                throw new NoSuchElementException();
             }
-        };
+            Attribute result = pending;
+            advance();
+            return result;
+        }
     }
 }
