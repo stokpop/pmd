@@ -24,6 +24,45 @@ This is a {{ site.pmd.release_type }} release.
 
 ### 🚀️ New and noteworthy
 
+#### New Kotlin rules and XPath helper
+
+New `pmd-kotlin:nodeText()` XPath function that returns the raw source text of the
+context node. This enables literal value checks in XPath rules (e.g. single-char string
+arguments, numeric literals) where no typed AST accessor exists.
+
+New rules for Kotlin:
+
+**Best practices**
+* [`LooseCoupling`]({{ baseurl }}pmd_rules_kotlin_bestpractices.html#loosecoupling): Avoid
+  declaring class-level fields with concrete collection types (ArrayList, HashMap, HashSet, etc.).
+  Prefer MutableList, MutableMap, or MutableSet interfaces for better flexibility.
+
+**Error prone**
+* [`AvoidCatchingNPE`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#avoidcatchingnpe): Catching
+  NullPointerException is a code smell in Kotlin. Use null-safety operators (?., ?:, !!) instead.
+* [`DoNotTerminateVM`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#donotterminatevm): Avoid
+  calling System.exit() or Runtime.halt(). Throw an exception or use a shutdown hook instead.
+* [`DoNotExtendJavaLangError`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#donotextendjavalang): Do
+  not extend Error or its standard subclasses; extend Exception or RuntimeException instead.
+* [`UseLocaleWithCaseConversions`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#uselocalewithcaseconversions):
+  String.toLowerCase()/toUpperCase() use the default system Locale. Use Kotlin's locale-safe
+  lowercase()/uppercase() extensions instead.
+
+**Performance**
+* [`AppendCharacterWithChar`]({{ baseurl }}pmd_rules_kotlin_performance.html#appendcharacterwithchar):
+  Replace single-char String literals in StringBuilder.append() with Char literals to avoid
+  unnecessary String allocation.
+* [`AvoidCallingGcExplicitly`]({{ baseurl }}pmd_rules_kotlin_performance.html#avoidcallinggcexplicitly):
+  Avoid calling System.gc() or Runtime.getRuntime().gc(). These are unreliable and degrade throughput.
+* [`BigIntegerInstantiation`]({{ baseurl }}pmd_rules_kotlin_performance.html#bigintegerinstantiation):
+  Use BigInteger.ZERO, BigInteger.ONE, or BigInteger.TEN instead of BigInteger.valueOf(0/1/10).
+* [`UseIndexOfChar`]({{ baseurl }}pmd_rules_kotlin_performance.html#useindexofchar): Use
+  indexOf(Char) / lastIndexOf(Char) instead of indexOf(String) / lastIndexOf(String) for
+  single-character arguments.
+* [`UseStringBuilderLength`]({{ baseurl }}pmd_rules_kotlin_performance.html#usestringbuilderlength):
+  Use StringBuilder.length directly instead of StringBuilder.toString().length to avoid
+  allocating a temporary String.
+
 ### 🐛️ Fixed Issues
 * apex
   * [#5386](https://github.com/pmd/pmd/issues/5386): \[apex] Apex files ending in "Test" are skipped with a number of rules
