@@ -180,6 +180,71 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="LooseCoupling"
+          language="kotlin"
+          since="7.x"
+          message="Use the interface type (List/Set/Map) instead of a concrete implementation type as the declared type."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#loosecoupling">
+        <description>
+            Declaring fields or properties with a concrete collection type (ArrayList, HashSet,
+            HashMap, etc.) tightly couples callers to an implementation detail. Declare the type as
+            the appropriate interface (List, Set, Map, MutableList, MutableSet, MutableMap) so the
+            implementation can be swapped without breaking API consumers.
+
+            In Kotlin, prefer the idiomatic factory functions:
+            - listOf() / mutableListOf() → returns MutableList
+            - setOf() / mutableSetOf() → returns MutableSet
+            - mapOf() / mutableMapOf() → returns MutableMap
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/bestpractices.xml/LooseCoupling
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/bestpractices.xml/LooseCoupling"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PropertyDeclaration[
+    not(ancestor::FunctionBody)
+    and (
+        pmd-kotlin:typeIsExactly('java.util.ArrayList')
+        or pmd-kotlin:typeIsExactly('java.util.LinkedList')
+        or pmd-kotlin:typeIsExactly('java.util.HashSet')
+        or pmd-kotlin:typeIsExactly('java.util.LinkedHashSet')
+        or pmd-kotlin:typeIsExactly('java.util.TreeSet')
+        or pmd-kotlin:typeIsExactly('java.util.HashMap')
+        or pmd-kotlin:typeIsExactly('java.util.LinkedHashMap')
+        or pmd-kotlin:typeIsExactly('java.util.TreeMap')
+    )
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.util.ArrayList
+import java.util.HashMap
+
+class Bad {
+    private val items: ArrayList<String> = ArrayList()    // violation: use MutableList
+    private val cache: HashMap<String, Int> = HashMap()  // violation: use MutableMap
+}
+
+class Good {
+    private val items: MutableList<String> = mutableListOf()  // ok: interface type
+    private val cache: MutableMap<String, Int> = mutableMapOf()  // ok: interface type
+
+    fun local() {
+        val local: ArrayList<String> = ArrayList()  // ok: local variable
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="FunctionNameTooShort"
           since="7.0.0"
           language="kotlin"

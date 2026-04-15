@@ -10,6 +10,7 @@ import net.sourceforge.pmd.lang.kotlin.ast.PmdKotlinParser;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinHasAnnotationFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinMatchesSigFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinModifiersFunction;
+import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinNodeTextFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinTypeIsExactlyFunction;
 import net.sourceforge.pmd.lang.kotlin.rule.xpath.internal.KotlinTypeIsFunction;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathHandler;
@@ -26,7 +27,8 @@ public class KotlinHandler extends AbstractPmdLanguageVersionHandler {
                         KotlinTypeIsExactlyFunction.INSTANCE,
                         KotlinMatchesSigFunction.INSTANCE,
                         KotlinHasAnnotationFunction.INSTANCE,
-                        KotlinModifiersFunction.INSTANCE);
+                        KotlinModifiersFunction.INSTANCE,
+                        KotlinNodeTextFunction.INSTANCE);
     }
 
     @Override

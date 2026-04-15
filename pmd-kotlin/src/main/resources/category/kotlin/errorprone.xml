@@ -257,6 +257,211 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="AvoidCatchingNPE"
+          language="kotlin"
+          since="7.x"
+          message="Avoid catching NullPointerException; use Kotlin null-safety (?., ?:, !!) instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidcatchingnpe">
+        <description>
+            Catching NullPointerException is a code smell in Kotlin. Kotlin's type system
+            distinguishes nullable from non-nullable types at compile time, making explicit NPE
+            catches unnecessary and masking real bugs.
+
+            Kotlin idiomatic alternatives:
+            - Use nullable types (String?) and safe calls (str?.length ?: 0)
+            - Use the Elvis operator (?:) for default values
+            - Use requireNotNull() or checkNotNull() for early validation
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/errorprone.xml/AvoidCatchingNPE
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/errorprone.xml/AvoidCatchingNPE"/>
+            <property name="xpath">
+                <value><![CDATA[
+//CatchBlock[pmd-kotlin:typeIsExactly('java.lang.NullPointerException')]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun getLength(s: String?): Int {
+        return try {
+            s!!.length
+        } catch (e: NullPointerException) { // violation: use ?. instead
+            0
+        }
+    }
+}
+
+class Good {
+    fun getLength(s: String?): Int {
+        return s?.length ?: 0  // ok: idiomatic Kotlin null-safety
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="DoNotTerminateVM"
+          language="kotlin"
+          since="7.x"
+          message="Avoid calling System.exit() or Runtime.halt(); throw an exception or use a proper shutdown hook instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#donotterminatevm">
+        <description>
+            Calling System.exit() or Runtime.halt() terminates the JVM abruptly, bypassing
+            shutdown hooks, resource cleanup, and normal exception handling. In library code this
+            is especially harmful as it kills the entire host process.
+
+            Prefer throwing an appropriate exception, or for application entry points register a
+            shutdown hook via Runtime.addShutdownHook() and signal shutdown through a flag or
+            coroutine cancellation.
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/errorprone.xml/DoNotTerminateVM
+        </description>
+        <priority>1</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/errorprone.xml/DoNotTerminateVM"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    PostfixUnarySuffix/NavigationSuffix[@Identifier='exit' or @Identifier='halt']
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun shutdown(code: Int) {
+        System.exit(code)  // violation: abrupt JVM termination
+    }
+}
+
+class Good {
+    fun shutdown(code: Int): Nothing {
+        throw IllegalStateException("shutdown requested with code $code")  // ok: exception-based
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="DoNotExtendJavaLangError"
+          language="kotlin"
+          since="7.x"
+          message="Do not extend Error or its standard subclasses; extend Exception or RuntimeException instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#donotextendjavalángerror">
+        <description>
+            java.lang.Error and its subclasses (AssertionError, LinkageError, VirtualMachineError,
+            ThreadDeath) represent serious JVM-level problems that application code should not
+            model. Extending them creates custom error types that callers will not catch, since
+            catch(e: Exception) does not catch Error.
+
+            Use Exception or RuntimeException (or a Kotlin sealed class hierarchy) instead.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//ClassDeclaration//DelegationSpecifier/ConstructorInvocation
+    /UserType/SimpleUserType[last()]/SimpleIdentifier/T-Identifier[
+        @Text = 'Error'
+        or @Text = 'AssertionError'
+        or @Text = 'ThreadDeath'
+        or @Text = 'LinkageError'
+        or @Text = 'VirtualMachineError'
+    ]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: Error subclasses bypass catch(e: Exception)
+class MyError : Error("something went wrong")
+class MyAssertError : AssertionError("assertion failed")
+
+// ok: proper exception hierarchy
+class MyException : RuntimeException("something went wrong")
+class MyCheckedException : Exception("checked equivalent")
+        ]]></example>
+    </rule>
+
+    <rule name="UseLocaleWithCaseConversions"
+          language="kotlin"
+          since="7.x"
+          message="String.toLowerCase()/toUpperCase() use the default system Locale; pass an explicit Locale or use Kotlin's lowercase()/uppercase()."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#uselocalewithcaseconversions">
+        <description>
+            Calling java.lang.String#toLowerCase() or #toUpperCase() without a Locale argument
+            uses the default system Locale, which can produce unexpected results for locale-sensitive
+            characters (e.g., Turkish 'i' → 'İ' with toUpperCase(Locale("tr"))).
+
+            Kotlin idiomatic alternatives:
+            - str.lowercase() / str.uppercase() — use Locale.ROOT (locale-insensitive, safe for
+              identifiers, file names, protocol keywords)
+            - str.lowercase(Locale.getDefault()) / str.uppercase(Locale.getDefault()) — explicit
+              locale-sensitive conversion for user-visible strings
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/errorprone.xml/UseLocaleWithCaseConversions
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/errorprone.xml/UseLocaleWithCaseConversions"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    (
+        pmd-kotlin:matchesSig('java.lang.String#toLowerCase()')
+        or pmd-kotlin:matchesSig('java.lang.String#toUpperCase()')
+    )
+    and PostfixUnarySuffix/NavigationSuffix[@Identifier='toLowerCase' or @Identifier='toUpperCase']
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun normalize(s: String): String {
+        return s.toLowerCase()   // violation: system-locale dependent
+    }
+
+    fun shout(s: String): String {
+        return s.toUpperCase()   // violation: system-locale dependent
+    }
+}
+
+class Good {
+    fun normalize(s: String): String {
+        return s.lowercase()   // ok: Kotlin extension, uses Locale.ROOT
+    }
+
+    fun shout(s: String): String {
+        return s.uppercase()   // ok: Kotlin extension, uses Locale.ROOT
+    }
+
+    fun displayLabel(s: String): String {
+        return s.lowercase(java.util.Locale.getDefault())  // ok: explicit locale for UI
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="OverrideBothEqualsAndHashcode"
           language="kotlin"
           since="7.0.0"
