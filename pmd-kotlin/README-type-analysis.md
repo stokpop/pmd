@@ -486,3 +486,36 @@ public Object visitFunctionDeclaration(KtFunctionDeclaration node, Object data) 
   constraint.** The practical implication is that rules like `AvoidCallingFinalize` can only detect
   `finalize()` calls when a class explicitly overrides the method (receiver type is that class, which
   IS a resolved subtype of `java.lang.Object`) — not on bare `Any` references.
+
+---
+
+## Future Rule Ideas
+
+### `KotlinNonIdiomaticCollectionInit` (not yet implemented)
+
+Kotlin has idiomatic factory functions for creating collections:
+
+| Idiomatic (Kotlin)         | Non-idiomatic (Java-style)              |
+|----------------------------|-----------------------------------------|
+| `listOf()` / `mutableListOf()` | `ArrayList()` / `LinkedList()`      |
+| `setOf()` / `mutableSetOf()`   | `HashSet()` / `TreeSet()`           |
+| `mapOf()` / `mutableMapOf()`   | `HashMap()` / `TreeMap()`           |
+
+A future rule could flag non-idiomatic initializer expressions regardless of the declared type:
+
+```kotlin
+val list: List<String> = ArrayList()        // flag: use listOf() or mutableListOf()
+val list: MutableList<String> = ArrayList() // flag: use mutableListOf()
+val list = ArrayList<String>()              // also covered by LooseCoupling (declared type = ArrayList)
+```
+
+This is distinct from `LooseCoupling` (which checks the *declared* type).
+The XPath would check the initializer call site via `matchesSig`, e.g.:
+```
+//PropertyDeclaration[
+    pmd-kotlin:matchesSig('java.util.ArrayList#<init>(*)')
+    or pmd-kotlin:matchesSig('java.util.LinkedList#<init>(*)')
+    or pmd-kotlin:matchesSig('java.util.HashSet#<init>(*)')
+    or ...
+]
+```
