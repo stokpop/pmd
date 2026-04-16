@@ -487,14 +487,7 @@ Use the `java.time` API instead: `LocalDate` (date only), `LocalTime` (time only
         <properties>
             <property name="xpath">
                 <value><![CDATA[
-//PostfixUnaryExpression[
-    pmd-kotlin:matchesSig('java.util.Date#<init>()')
-    or (
-        (starts-with(pmd-kotlin:nodeText(), 'Date(') or starts-with(pmd-kotlin:nodeText(), 'java.util.Date('))
-        and PostfixUnarySuffix/CallSuffix
-        and not(PostfixUnarySuffix/NavigationSuffix)
-    )
-]
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.Date#<init>(*)')]
                 ]]></value>
             </property>
         </properties>
@@ -573,11 +566,7 @@ Prefer `java.time` APIs (such as `DateTimeFormatter`) which have explicit locale
         <properties>
             <property name="xpath">
                 <value><![CDATA[
-//PostfixUnaryExpression[
-    starts-with(pmd-kotlin:nodeText(), 'SimpleDateFormat(')
-    and PostfixUnarySuffix/CallSuffix/ValueArguments[count(ValueArgument) = 1]
-    and not(PostfixUnarySuffix/NavigationSuffix)
-]
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.text.SimpleDateFormat#<init>(java.lang.String)')]
                 ]]></value>
             </property>
         </properties>

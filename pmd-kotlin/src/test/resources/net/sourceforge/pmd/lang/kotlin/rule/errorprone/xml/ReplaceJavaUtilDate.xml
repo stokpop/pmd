@@ -41,4 +41,27 @@ class Good {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>Fully qualified java.util.Date() is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+class Bad {
+    val now = java.util.Date()
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>Custom class named Date is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Date(val value: String)
+
+class Good {
+    val d = Date("hello")
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

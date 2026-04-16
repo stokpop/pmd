@@ -43,4 +43,27 @@ class Good {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>Fully qualified java.text.SimpleDateFormat without Locale is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+class Bad {
+    val formatter = java.text.SimpleDateFormat("yyyy-MM-dd")
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>Custom class named SimpleDateFormat is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class SimpleDateFormat(pattern: String)
+
+class Good {
+    val formatter = SimpleDateFormat("yyyy-MM-dd")
+}
+        ]]></code>
+    </test-code>
+
 </test-data>
