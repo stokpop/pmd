@@ -180,6 +180,32 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="FunctionNameTooShort"
+          since="7.0.0"
+          language="kotlin"
+          message="Function names should have non-cryptic and clear names."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#functionnametooshort">
+        <description>
+            Function names should be easy to understand and describe the intention. Makes developers happy.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+                    //FunctionDeclaration/SimpleIdentifier/T-Identifier[string-length(@Text) < 3]
+                ]]></value>
+            </property>
+        </properties>
+        <example>
+            <![CDATA[
+fun cl() {} // violation, no unavailable attribute added to the function declaration
+
+fun calculateLayout() // no violation
+]]>
+        </example>
+    </rule>
+
     <rule name="LooseCoupling"
           language="kotlin"
           since="7.x"
@@ -245,32 +271,6 @@ class Good {
         ]]></example>
     </rule>
 
-    <rule name="FunctionNameTooShort"
-          since="7.0.0"
-          language="kotlin"
-          message="Function names should have non-cryptic and clear names."
-          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
-          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#functionnametooshort">
-        <description>
-            Function names should be easy to understand and describe the intention. Makes developers happy.
-        </description>
-        <priority>3</priority>
-        <properties>
-            <property name="xpath">
-                <value><![CDATA[
-                    //FunctionDeclaration/SimpleIdentifier/T-Identifier[string-length(@Text) < 3]
-                ]]></value>
-            </property>
-        </properties>
-        <example>
-            <![CDATA[
-fun cl() {} // violation, no unavailable attribute added to the function declaration
-
-fun calculateLayout() // no violation
-]]>
-        </example>
-    </rule>
-
     <rule name="SystemPrintln"
           language="kotlin"
           since="7.x"
@@ -323,6 +323,97 @@ class Good {
 
     fun report(msg: String) {
         log.info(msg)  // ok
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="UseCollectionIsEmpty"
+          language="kotlin"
+          since="7.14.0"
+          message="Use isEmpty() or isNotEmpty() instead of comparing size to 0"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#usecollectionisempty">
+        <description>
+Prefer `isEmpty()` or `isNotEmpty()` over comparing `size` (or `count()`) to zero.
+Using the dedicated methods is more idiomatic Kotlin and more readable.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+(
+    //Equality[
+        EqualityOperator
+        and Comparison[.//NavigationSuffix[@Identifier='size' or @Identifier='count']]
+        and Comparison[pmd-kotlin:nodeText() = '0' or pmd-kotlin:nodeText() = '1']
+    ]
+    |
+    //Comparison[
+        ComparisonOperator
+        and .//NavigationSuffix[@Identifier='size' or @Identifier='count']
+        and *[pmd-kotlin:nodeText() = '0' or pmd-kotlin:nodeText() = '1']
+    ]
+)
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun check(list: List<Int>) {
+        if (list.size == 0) println("empty")      // violation
+        if (list.size != 0) println("not empty")  // violation
+        if (list.count() > 0) println("has items")// violation
+    }
+}
+
+class Good {
+    fun check(list: List<Int>) {
+        if (list.isEmpty()) println("empty")      // ok
+        if (list.isNotEmpty()) println("not empty")// ok
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="UseStandardCharsets"
+          language="kotlin"
+          since="7.14.0"
+          message="Use StandardCharsets.{0} instead of Charset.forName(&quot;{0}&quot;)"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#usestandardcharsets">
+        <description>
+Use the constants from `java.nio.charset.StandardCharsets` instead of calling `Charset.forName(String)`.
+The constants avoid the need to handle `UnsupportedEncodingException` and provide a small performance advantage
+because no lookup through the charset cache is needed.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    starts-with(pmd-kotlin:nodeText(), 'Charset.')
+    and PostfixUnarySuffix/NavigationSuffix[@Identifier='forName']
+    and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[
+        pmd-kotlin:nodeText() = ('"US-ASCII"', '"ISO-8859-1"', '"UTF-8"', '"UTF-16BE"', '"UTF-16LE"', '"UTF-16"')
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+
+class Bad {
+    fun encode(s: String): ByteArray {
+        return s.toByteArray(Charset.forName("UTF-8"))  // violation
+    }
+}
+
+class Good {
+    fun encode(s: String): ByteArray {
+        return s.toByteArray(StandardCharsets.UTF_8)  // ok
     }
 }
         ]]></example>

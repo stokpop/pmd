@@ -112,6 +112,57 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="AvoidCatchingNPE"
+          language="kotlin"
+          since="7.x"
+          message="Avoid catching NullPointerException; use Kotlin null-safety (?., ?:, !!) instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidcatchingnpe">
+        <description>
+            Catching NullPointerException is a code smell in Kotlin. Kotlin's type system
+            distinguishes nullable from non-nullable types at compile time, making explicit NPE
+            catches unnecessary and masking real bugs.
+
+            Kotlin idiomatic alternatives:
+            - Use nullable types (String?) and safe calls (str?.length ?: 0)
+            - Use the Elvis operator (?:) for default values
+            - Use requireNotNull() or checkNotNull() for early validation
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+            See the pmd-kotlin documentation for setup instructions.
+
+            Kotlin equivalent of Java rule: category/java/errorprone.xml/AvoidCatchingNPE
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/errorprone.xml/AvoidCatchingNPE"/>
+            <property name="xpath">
+                <value><![CDATA[
+//CatchBlock[pmd-kotlin:typeIsExactly('java.lang.NullPointerException')]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun getLength(s: String?): Int {
+        return try {
+            s!!.length
+        } catch (e: NullPointerException) { // violation: use ?. instead
+            0
+        }
+    }
+}
+
+class Good {
+    fun getLength(s: String?): Int {
+        return s?.length ?: 0  // ok: idiomatic Kotlin null-safety
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="AvoidCatchingThrowable"
           language="kotlin"
           since="7.x"
@@ -257,54 +308,43 @@ class Good {
         ]]></example>
     </rule>
 
-    <rule name="AvoidCatchingNPE"
+    <rule name="DoNotExtendJavaLangError"
           language="kotlin"
           since="7.x"
-          message="Avoid catching NullPointerException; use Kotlin null-safety (?., ?:, !!) instead."
+          message="Do not extend Error or its standard subclasses; extend Exception or RuntimeException instead."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
-          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidcatchingnpe">
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#donotextendjavalangerror">
         <description>
-            Catching NullPointerException is a code smell in Kotlin. Kotlin's type system
-            distinguishes nullable from non-nullable types at compile time, making explicit NPE
-            catches unnecessary and masking real bugs.
+            java.lang.Error and its subclasses (AssertionError, LinkageError, VirtualMachineError,
+            ThreadDeath) represent serious JVM-level problems that application code should not
+            model. Extending them creates custom error types that callers will not catch, since
+            catch(e: Exception) does not catch Error.
 
-            Kotlin idiomatic alternatives:
-            - Use nullable types (String?) and safe calls (str?.length ?: 0)
-            - Use the Elvis operator (?:) for default values
-            - Use requireNotNull() or checkNotNull() for early validation
-
-            Note: this rule requires kotlin-type-mapper pre-analysis to be available.
-            See the pmd-kotlin documentation for setup instructions.
-
-            Kotlin equivalent of Java rule: category/java/errorprone.xml/AvoidCatchingNPE
+            Use Exception or RuntimeException (or a Kotlin sealed class hierarchy) instead.
         </description>
         <priority>2</priority>
         <properties>
-            <property name="javaEquivalentRule" type="String"
-                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
-                      value="category/java/errorprone.xml/AvoidCatchingNPE"/>
             <property name="xpath">
                 <value><![CDATA[
-//CatchBlock[pmd-kotlin:typeIsExactly('java.lang.NullPointerException')]
+//ClassDeclaration//DelegationSpecifier/ConstructorInvocation
+    /UserType/SimpleUserType[last()]/SimpleIdentifier/T-Identifier[
+        @Text = 'Error'
+        or @Text = 'AssertionError'
+        or @Text = 'ThreadDeath'
+        or @Text = 'LinkageError'
+        or @Text = 'VirtualMachineError'
+    ]
                 ]]></value>
             </property>
         </properties>
         <example><![CDATA[
-class Bad {
-    fun getLength(s: String?): Int {
-        return try {
-            s!!.length
-        } catch (e: NullPointerException) { // violation: use ?. instead
-            0
-        }
-    }
-}
+// violation: Error subclasses bypass catch(e: Exception)
+class MyError : Error("something went wrong")
+class MyAssertError : AssertionError("assertion failed")
 
-class Good {
-    fun getLength(s: String?): Int {
-        return s?.length ?: 0  // ok: idiomatic Kotlin null-safety
-    }
-}
+// ok: proper exception hierarchy
+class MyException : RuntimeException("something went wrong")
+class MyCheckedException : Exception("checked equivalent")
         ]]></example>
     </rule>
 
@@ -356,43 +396,243 @@ class Good {
         ]]></example>
     </rule>
 
-    <rule name="DoNotExtendJavaLangError"
+    <rule name="EqualsNull"
           language="kotlin"
-          since="7.x"
-          message="Do not extend Error or its standard subclasses; extend Exception or RuntimeException instead."
+          since="7.14.0"
+          message="Use == null or != null instead of .equals(null)"
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
-          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#donotextendjavalángerror">
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#equalsnull">
         <description>
-            java.lang.Error and its subclasses (AssertionError, LinkageError, VirtualMachineError,
-            ThreadDeath) represent serious JVM-level problems that application code should not
-            model. Extending them creates custom error types that callers will not catch, since
-            catch(e: Exception) does not catch Error.
-
-            Use Exception or RuntimeException (or a Kotlin sealed class hierarchy) instead.
+Tests for null should not use the `equals()` method. The `==` operator should be used instead.
+In Kotlin, `==` is null-safe and more idiomatic than calling `obj.equals(null)`.
         </description>
-        <priority>2</priority>
+        <priority>1</priority>
         <properties>
             <property name="xpath">
                 <value><![CDATA[
-//ClassDeclaration//DelegationSpecifier/ConstructorInvocation
-    /UserType/SimpleUserType[last()]/SimpleIdentifier/T-Identifier[
-        @Text = 'Error'
-        or @Text = 'AssertionError'
-        or @Text = 'ThreadDeath'
-        or @Text = 'LinkageError'
-        or @Text = 'VirtualMachineError'
-    ]
+//PostfixUnaryExpression[
+    PostfixUnarySuffix/NavigationSuffix[@Identifier='equals']
+    and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[pmd-kotlin:nodeText()='null']
+]
                 ]]></value>
             </property>
         </properties>
         <example><![CDATA[
-// violation: Error subclasses bypass catch(e: Exception)
-class MyError : Error("something went wrong")
-class MyAssertError : AssertionError("assertion failed")
+class Bad {
+    fun check(s: String?) {
+        if (s.equals(null)) println("null")  // violation
+    }
+}
 
-// ok: proper exception hierarchy
-class MyException : RuntimeException("something went wrong")
-class MyCheckedException : Exception("checked equivalent")
+class Good {
+    fun check(s: String?) {
+        if (s == null) println("null")  // ok: idiomatic Kotlin null check
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="OverrideBothEqualsAndHashcode"
+          language="kotlin"
+          since="7.0.0"
+          message="Ensure you override both equals() and hashCode()"
+          class="net.sourceforge.pmd.lang.kotlin.rule.errorprone.OverrideBothEqualsAndHashcodeRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#overridebothequalsandhashcode">
+        <description>
+Override both public boolean Object.equals(Object other), and public int Object.hashCode(), or override neither.  Even if you are inheriting a hashCode() from a parent class, consider implementing hashCode and explicitly delegating to your superclass.
+
+The idiomatic Kotlin solution is to use a **data class**, which generates correct equals() and hashCode() automatically based on the primary constructor properties.
+        </description>
+        <priority>3</priority>
+        <example>
+<![CDATA[
+class Bar {        // poor, missing a hashCode() method
+    override fun equals(o: Any?): Boolean {
+      // do some comparison
+    }
+}
+
+class Baz {        // poor, missing an equals() method
+    override fun hashCode(): Int {
+      // return some hash value
+    }
+}
+
+class Foo {        // ok: both methods provided
+    override fun equals(other: Any?): Boolean {
+      // do some comparison
+    }
+    override fun hashCode(): Int {
+      // return some hash value
+    }
+}
+
+data class Point(val x: Int, val y: Int)  // idiomatic Kotlin: data class auto-generates equals() and hashCode()
+]]>
+        </example>
+    </rule>
+
+    <rule name="ReplaceJavaUtilDate"
+          language="kotlin"
+          since="7.14.0"
+          message="Avoid using java.util.Date; use java.time API instead"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#replacejavautildate">
+        <description>
+The legacy `java.util.Date` class is mutable, not thread-safe, and has a confusing API.
+Use the `java.time` API instead: `LocalDate` (date only), `LocalTime` (time only),
+`LocalDateTime` (date and time), `Instant` (timestamp), or `ZonedDateTime` (with timezone).
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.util.Date#<init>()')
+    or (
+        (starts-with(pmd-kotlin:nodeText(), 'Date(') or starts-with(pmd-kotlin:nodeText(), 'java.util.Date('))
+        and PostfixUnarySuffix/CallSuffix
+        and not(PostfixUnarySuffix/NavigationSuffix)
+    )
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.util.Date
+
+class Bad {
+    val created: Date = Date()               // violation
+    val fromMillis: Date = Date(1000L)       // violation
+}
+
+class Good {
+    val created = java.time.Instant.now()    // ok: use java.time.Instant for timestamps
+    val date = java.time.LocalDate.now()     // ok: use java.time.LocalDate for dates
+}
+        ]]></example>
+    </rule>
+
+    <rule name="ReturnFromFinallyBlock"
+          language="kotlin"
+          since="7.14.0"
+          message="Avoid returning from a finally block; this can discard exceptions"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#returnfromfinallyblock">
+        <description>
+Avoid returning from a `finally` block. Returning from a `finally` block silently discards any exception
+that was thrown in the corresponding `try` or `catch` block, making bugs very hard to find.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//FinallyBlock//JumpExpression[T-RETURN]
+except //FinallyBlock//AnonymousFunction//JumpExpression[T-RETURN]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun load(): Int {
+        try {
+            return 1
+        } finally {
+            return 2  // violation: silently discards any exception from the try block
+        }
+    }
+}
+
+class Good {
+    fun load(): Int {
+        try {
+            return 1
+        } finally {
+            cleanup()  // ok: no return in finally
+        }
+    }
+
+    private fun cleanup() {}
+}
+        ]]></example>
+    </rule>
+
+    <rule name="SimpleDateFormatNeedsLocale"
+          language="kotlin"
+          since="7.14.0"
+          message="Specify a Locale when constructing a SimpleDateFormat"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#simpledateformatneedslocale">
+        <description>
+Be sure to specify a `Locale` when creating `SimpleDateFormat` instances to ensure that
+locale-appropriate formatting is used. Without a locale, the default system locale is used which
+can cause unexpected results in internationalized applications.
+Prefer `java.time` APIs (such as `DateTimeFormatter`) which have explicit locale support.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    starts-with(pmd-kotlin:nodeText(), 'SimpleDateFormat(')
+    and PostfixUnarySuffix/CallSuffix/ValueArguments[count(ValueArgument) = 1]
+    and not(PostfixUnarySuffix/NavigationSuffix)
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+import java.text.SimpleDateFormat
+import java.util.Locale
+
+class Bad {
+    val formatter = SimpleDateFormat("yyyy-MM-dd")  // violation: no Locale
+}
+
+class Good {
+    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)  // ok: explicit Locale
+
+    // Better: use java.time APIs
+    val dtFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
+}
+        ]]></example>
+    </rule>
+
+    <rule name="UnnecessaryCaseChange"
+          language="kotlin"
+          since="7.14.0"
+          message="Unnecessary case change before equals(); use equals with ignoreCase = true instead"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#unnecessarycasechange">
+        <description>
+Using `toLowerCase()` or `toUpperCase()` just to do a case-insensitive comparison is wasteful.
+In Kotlin, use `equals(other, ignoreCase = true)` for strings, or `equalsIgnoreCase()` from the Java API.
+This avoids creating a temporary String object.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    (PostfixUnarySuffix/NavigationSuffix[@Identifier='toLowerCase']
+     or PostfixUnarySuffix/NavigationSuffix[@Identifier='toUpperCase'])
+    and PostfixUnarySuffix/NavigationSuffix[@Identifier='equals']
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun check(input: String, expected: String): Boolean {
+        return input.toLowerCase().equals(expected)  // violation: creates a temporary String
+    }
+}
+
+class Good {
+    fun check(input: String, expected: String): Boolean {
+        return input.equals(expected, ignoreCase = true)  // ok: no temporary String
+    }
+}
         ]]></example>
     </rule>
 
@@ -460,46 +700,6 @@ class Good {
     }
 }
         ]]></example>
-    </rule>
-
-    <rule name="OverrideBothEqualsAndHashcode"
-          language="kotlin"
-          since="7.0.0"
-          message="Ensure you override both equals() and hashCode()"
-          class="net.sourceforge.pmd.lang.kotlin.rule.errorprone.OverrideBothEqualsAndHashcodeRule"
-          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#overridebothequalsandhashcode">
-        <description>
-Override both public boolean Object.equals(Object other), and public int Object.hashCode(), or override neither.  Even if you are inheriting a hashCode() from a parent class, consider implementing hashCode and explicitly delegating to your superclass.
-
-The idiomatic Kotlin solution is to use a **data class**, which generates correct equals() and hashCode() automatically based on the primary constructor properties.
-        </description>
-        <priority>3</priority>
-        <example>
-<![CDATA[
-class Bar {        // poor, missing a hashCode() method
-    override fun equals(o: Any?): Boolean {
-      // do some comparison
-    }
-}
-
-class Baz {        // poor, missing an equals() method
-    override fun hashCode(): Int {
-      // return some hash value
-    }
-}
-
-class Foo {        // ok: both methods provided
-    override fun equals(other: Any?): Boolean {
-      // do some comparison
-    }
-    override fun hashCode(): Int {
-      // return some hash value
-    }
-}
-
-data class Point(val x: Int, val y: Int)  // idiomatic Kotlin: data class auto-generates equals() and hashCode()
-]]>
-        </example>
     </rule>
 
 </ruleset>

@@ -63,6 +63,37 @@ New rules for Kotlin:
   Use StringBuilder.length directly instead of StringBuilder.toString().length to avoid
   allocating a temporary String.
 
+#### More new Kotlin rules (second batch)
+
+**Best practices**
+* [`UseCollectionIsEmpty`]({{ baseurl }}pmd_rules_kotlin_bestpractices.html#usecollectionisempty): Replace
+  `collection.size == 0` (or `!= 0`) with `collection.isEmpty()` / `collection.isNotEmpty()`.
+* [`UseStandardCharsets`]({{ baseurl }}pmd_rules_kotlin_bestpractices.html#usestandardcharsets): Use
+  `StandardCharsets.UTF_8` (or similar constants) instead of `Charset.forName("UTF-8")`.
+
+**Error prone**
+* [`EqualsNull`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#equalsnull): Replace `x.equals(null)` with
+  a direct null check (`x == null`). `equals(null)` always returns false and is likely a bug.
+* [`ReplaceJavaUtilDate`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#replacejavautildate): Avoid using
+  `java.util.Date`; prefer `java.time.LocalDate`, `LocalDateTime`, or `Instant` instead.
+* [`ReturnFromFinallyBlock`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#returnfromfinallyblock): A
+  `return` inside a `finally` block silently swallows any exception thrown in the `try` block.
+* [`SimpleDateFormatNeedsLocale`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#simpledateformatneedslocale):
+  `SimpleDateFormat` constructed without a Locale uses the default system Locale and can produce
+  locale-sensitive output unexpectedly.
+* [`UnnecessaryCaseChange`]({{ baseurl }}pmd_rules_kotlin_errorprone.html#unnecessarycasechange): Calling
+  `.toLowerCase().equals(...)` or `.toUpperCase().equals(...)` is redundant; use
+  `.equals(..., ignoreCase = true)` instead.
+
+**Performance**
+* [`AddEmptyString`]({{ baseurl }}pmd_rules_kotlin_performance.html#addemptystring): Avoid appending an
+  empty string literal `""` to convert a value to String; use `.toString()` or string templates instead.
+* [`ConsecutiveLiteralAppends`]({{ baseurl }}pmd_rules_kotlin_performance.html#consecutiveliteralappends):
+  Multiple consecutive `StringBuilder.append()` calls with string literals should be combined into a
+  single `append()` call to reduce method-call overhead.
+* [`UselessStringValueOf`]({{ baseurl }}pmd_rules_kotlin_performance.html#uselessstringvalueof): Avoid
+  wrapping a value in `String.valueOf()`; use a string template or `.toString()` instead.
+
 ### 🐛️ Fixed Issues
 * apex
   * [#5386](https://github.com/pmd/pmd/issues/5386): \[apex] Apex files ending in "Test" are skipped with a number of rules
