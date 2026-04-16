@@ -297,11 +297,7 @@ class Good {
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    (
-        starts-with(pmd-kotlin:nodeText(), 'BigInteger.')
-        or starts-with(pmd-kotlin:nodeText(), 'java.math.BigInteger.')
-    )
-    and PostfixUnarySuffix/NavigationSuffix[@Identifier='valueOf']
+    pmd-kotlin:matchesSig('java.math.BigInteger#valueOf(*)')
     and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[
         pmd-kotlin:nodeText() = '0'
         or pmd-kotlin:nodeText() = '1'

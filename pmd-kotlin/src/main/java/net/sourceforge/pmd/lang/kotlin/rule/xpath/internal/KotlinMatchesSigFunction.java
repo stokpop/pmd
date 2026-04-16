@@ -31,6 +31,15 @@ import nl.stokpop.typemapper.model.SignatureMatcherKt;
  * <p>Requires a pre-analyzed {@link KotlinTypeAnalysisContext}; returns {@code false}
  * gracefully if no analysis data is available.
  *
+ * <p><b>Known limitation:</b> {@code kotlin.String} is a built-in Kotlin type mapped to
+ * {@code java.lang.String} at the JVM level. Instance methods (e.g. {@code toLowerCase()},
+ * {@code equals()}) resolve correctly via either {@code java.lang.String#...} or
+ * {@code kotlin.String#...}. However, Java <em>static</em> methods accessed through
+ * {@code String.*} (e.g. {@code String.valueOf(...)}) are not tracked as call sites by the
+ * type mapper, so {@code matchesSig('java.lang.String#valueOf(*)')} will return {@code false}.
+ * Use a structural XPath check ({@code starts-with(pmd-kotlin:nodeText(), 'String.')}) as
+ * a fallback for such cases.
+ *
  * <p>Example XPath:
  * <pre>{@code
  * //PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.regex.Pattern#matches(java.lang.String,java.lang.CharSequence)')]

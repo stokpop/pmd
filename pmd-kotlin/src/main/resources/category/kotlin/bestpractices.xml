@@ -392,8 +392,7 @@ because no lookup through the charset cache is needed.
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    starts-with(pmd-kotlin:nodeText(), 'Charset.')
-    and PostfixUnarySuffix/NavigationSuffix[@Identifier='forName']
+    pmd-kotlin:matchesSig('java.nio.charset.Charset#forName(java.lang.String)')
     and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[
         pmd-kotlin:nodeText() = ('"US-ASCII"', '"ISO-8859-1"', '"UTF-8"', '"UTF-16BE"', '"UTF-16LE"', '"UTF-16"')
     ]
