@@ -107,4 +107,15 @@ class Bad {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>List interface declared type with ArrayList initializer is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Good {
+    val allowedCns: List<String> = ArrayList()
+    val allowedJwt: List<String> = ArrayList()
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

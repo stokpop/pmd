@@ -95,8 +95,13 @@ public final class KotlinTypeIsFunction extends BaseKotlinXPathFunction {
             String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
             int line = contextNode.getBeginLine();
 
-            return matchesAnyDeclaration(ctx.declarationsAt(absPath, line), typeName, ctx)
-                    || matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
+            // Use declaration data authoritatively if available — do NOT fall through to call-site
+            // analysis, which would match the initializer's return type instead of the declared type.
+            List<DeclarationAst> decls = ctx.declarationsAt(absPath, line);
+            if (!decls.isEmpty()) {
+                return matchesAnyDeclaration(decls, typeName, ctx);
+            }
+            return matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
         }
 
         private static boolean matchesNodeAttribute(
