@@ -52,7 +52,7 @@ class KotlinParserMultiLineStringTest {
         List<KtMultiLineStringLiteral> literals = root.descendants(KtMultiLineStringLiteral.class).toList();
         assertEquals(1, literals.size(), "Expected exactly one multi-line string literal");
 
-        // check number of dollars in the prefix before the tripple quotes
+        // check number of dollars in the prefix before the triple quotes
         List<KotlinTerminalNode> nodes = literals.get(0).children(KotlinTerminalNode.class).toList();
         assertEquals(3, nodes.size()); // expected: '$$$' and '"""' and '"""'
         // this is to demonstrate the potential matching of the real multi-dollar expression in next step

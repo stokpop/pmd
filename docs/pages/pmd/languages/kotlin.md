@@ -18,6 +18,7 @@ PMD's Kotlin parser may lag behind the latest Kotlin compiler and does not aim t
 
 The only Kotlin 2.x feature currently supported is **"Multidollar interpolation: improved handling of $ in string literals"**.
 This feature was preview in Kotlin 2.1.0 and stabilized in Kotlin 2.2.0.
+See [Multi-dollar string interpolation](https://kotlinlang.org/docs/strings.html#multi-dollar-string-interpolation).
 
 For informational purposes, PMD advertises Kotlin 2.2.0 as the highest supported version.
 Selecting a different Kotlin language version does not currently change the parser behavior (unlike Java).
