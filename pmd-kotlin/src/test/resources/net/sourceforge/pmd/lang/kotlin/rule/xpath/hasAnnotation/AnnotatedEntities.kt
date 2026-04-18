@@ -22,3 +22,7 @@ class UserEntity {
 
     fun normalMethod(): String = email
 }
+
+// Annotation written as fully-qualified name in source (no import)
+@org.springframework.stereotype.Service
+class FqnAnnotatedService

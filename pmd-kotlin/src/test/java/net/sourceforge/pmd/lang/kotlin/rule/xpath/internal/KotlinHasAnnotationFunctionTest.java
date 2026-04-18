@@ -118,7 +118,22 @@ class KotlinHasAnnotationFunctionTest {
                 "Should not match com.other.Column when actual annotation is javax.persistence.Column");
     }
 
-    // -------------------------------------------------------------------------
+    @Test
+    void hasAnnotationSimpleNameMatchesFqnWrittenAnnotation() {
+        // @org.springframework.stereotype.Service written as FQN in source (no import)
+        // hasAnnotation('Service') must match via simple-name suffix comparison (path 3)
+        Report report = runXPath(
+                "//ClassDeclaration[pmd-kotlin:hasAnnotation('Service')]",
+                getResource(RESOURCE_DIR + "/AnnotatedEntities.kt"));
+        assertTrue(report.getProcessingErrors().isEmpty());
+        // FqnAnnotatedService is declared around lines 27-28 — verify at least one match exists
+        assertFalse(report.getViolations().isEmpty(),
+                "Expected hasAnnotation('Service') to match @org.springframework.stereotype.Service on FqnAnnotatedService");
+        // UserEntity (@Entity, not @Service) must not appear in results
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() <= 9 && v.getBeginLine() >= 7),
+                "UserEntity (lines 7-9) must not match hasAnnotation('Service')");
+    }
+
 
     private Report runXPath(String xpathExpr, File kotlinFile) {
         PMDConfiguration config = new PMDConfiguration();

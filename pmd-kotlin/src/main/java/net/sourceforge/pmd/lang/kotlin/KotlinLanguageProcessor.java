@@ -144,22 +144,38 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             }
             return entries;
         }
-        // 2. ClassLoader (set by PmdAnalysis / Designer via JvmLanguagePropertyBundle.setClassLoader)
-        ClassLoader cl = jvmBundle.getAnalysisClassLoader();
-        if (cl instanceof java.net.URLClassLoader) {
+        // 2. java.class.path system property — Maven Surefire puts all test dependencies here.
+        //    This is the reliable way to get slf4j, javax.xml.xpath, etc. onto kotlin-type-mapper's classpath.
+        String javaClassPath = System.getProperty("java.class.path");
+        if (javaClassPath != null && !javaClassPath.isEmpty()) {
             List<File> entries = new ArrayList<>();
-            for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
-                if (FILE_PROTOCOL.equals(url.getProtocol())) {
-                    try {
-                        entries.add(new File(url.toURI()));
-                    } catch (URISyntaxException e) {
-                        LOG.debug("Could not convert classpath URL to File: {}", url);
+            for (String entry : javaClassPath.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+                if (!entry.isEmpty()) {
+                    entries.add(new File(entry));
+                }
+            }
+            LOG.debug("kotlin-type-mapper aux classpath from java.class.path ({} entries)", entries.size());
+            return entries;
+        }
+        // 3. URLClassLoader hierarchy (PMD Designer sets a URLClassLoader via setClassLoader)
+        ClassLoader cl = jvmBundle.getAnalysisClassLoader();
+        List<File> entries = new ArrayList<>();
+        while (cl != null) {
+            if (cl instanceof java.net.URLClassLoader) {
+                for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
+                    if (FILE_PROTOCOL.equals(url.getProtocol())) {
+                        try {
+                            entries.add(new File(url.toURI()));
+                        } catch (URISyntaxException e) {
+                            LOG.debug("Could not convert classpath URL to File: {}", url);
+                        }
                     }
                 }
             }
-            return entries;
+            cl = cl.getParent();
         }
-        return new ArrayList<>();
+        LOG.debug("kotlin-type-mapper aux classpath from URLClassLoader hierarchy ({} entries)", entries.size());
+        return entries;
     }
 
     private static void deleteRecursively(File file) {

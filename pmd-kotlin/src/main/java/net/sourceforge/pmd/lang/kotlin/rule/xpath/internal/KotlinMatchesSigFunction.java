@@ -4,6 +4,8 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
+import java.util.List;
+
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.Node;
@@ -31,14 +33,20 @@ import nl.stokpop.typemapper.model.SignatureMatcherKt;
  * <p>Requires a pre-analyzed {@link KotlinTypeAnalysisContext}; returns {@code false}
  * gracefully if no analysis data is available.
  *
- * <p><b>Known limitation:</b> {@code kotlin.String} is a built-in Kotlin type mapped to
- * {@code java.lang.String} at the JVM level. Instance methods (e.g. {@code toLowerCase()},
- * {@code equals()}) resolve correctly via either {@code java.lang.String#...} or
- * {@code kotlin.String#...}. However, Java <em>static</em> methods accessed through
- * {@code String.*} (e.g. {@code String.valueOf(...)}) are not tracked as call sites by the
- * type mapper, so {@code matchesSig('java.lang.String#valueOf(*)')} will return {@code false}.
- * Use a structural XPath check ({@code starts-with(pmd-kotlin:nodeText(), 'String.')}) as
- * a fallback for such cases.
+ * <p><b>How type resolution works:</b> Before any rules are evaluated, the Kotlin K1 compiler
+ * (via kotlin-type-mapper) analyzes all source files using the aux classpath jars to resolve types
+ * and record call site signatures into {@link KotlinTypeAnalysisContext}. At rule evaluation time,
+ * {@code matchesSig} only queries that pre-computed data — no jars are needed then.
+ * If a required jar is missing from the classpath, the type will be unresolved and the
+ * {@code UnresolvedType} rule will fire as a signal, while {@code matchesSig} returns {@code false}.
+ *
+ * <p><b>Multi-line chain support:</b> When a {@code PostfixUnaryExpression} spans multiple lines
+ * (e.g. a method call split across lines), all call sites in the full line range are checked,
+ * so {@code matchesSig} works correctly for chained calls like:
+ * <pre>{@code
+ * val expr = xpath
+ *     .compile("//book") // call on line N+1 — correctly matched
+ * }</pre>
  *
  * <p>Example XPath:
  * <pre>{@code
@@ -90,17 +98,20 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
             if (contextNode == null) {
                 return false;
             }
-            String sig       = (String) arguments[0];
-            String absPath   = contextNode.getTextDocument().getFileId().getAbsolutePath();
-            int beginLine    = contextNode.getBeginLine();
-            int beginCol     = contextNode.getBeginColumn();
-            int endCol       = contextNode.getEndColumn();
-            boolean singleLine = (contextNode.getEndLine() == beginLine);
+            String sig      = (String) arguments[0];
+            String absPath  = contextNode.getTextDocument().getFileId().getAbsolutePath();
+            int beginLine   = contextNode.getBeginLine();
+            int endLine     = contextNode.getEndLine();
+            int beginCol    = contextNode.getBeginColumn();
+            int endCol      = contextNode.getEndColumn();
+            boolean singleLine = (endLine == beginLine);
 
             KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-            for (CallSiteAst call : ctx.callSitesAt(absPath, beginLine)) {
-                if (matchesCallSite(call, beginLine, beginCol, endCol, singleLine)
-                        && SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf)) {
+            List<CallSiteAst> sites = ctx.callSitesInRange(absPath, beginLine, endLine);
+            for (CallSiteAst call : sites) {
+                boolean callSiteMatch = matchesCallSite(call, beginLine, beginCol, endCol, singleLine);
+                boolean sigMatch = callSiteMatch && SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf);
+                if (sigMatch) {
                     return true;
                 }
             }
@@ -110,10 +121,16 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
         private static boolean matchesCallSite(CallSiteAst call,
                                                int beginLine, int beginCol, int endCol,
                                                boolean singleLine) {
-            if (call.getLine() == beginLine || singleLine) {
+            if (singleLine) {
+                // Single-line: filter by column range to distinguish multiple calls on the same line
                 int col = call.getColumn();
                 return col >= beginCol && col <= endCol;
             }
+            if (call.getLine() == beginLine) {
+                // First line of multi-line expression: call must start at or after the expression start
+                return call.getColumn() >= beginCol;
+            }
+            // Any other line in the range: accept all calls (no column constraint)
             return true;
         }
     }

@@ -20,6 +20,7 @@ import nl.stokpop.typemapper.model.DeclarationAst;
 import nl.stokpop.typemapper.model.FileAst;
 import nl.stokpop.typemapper.model.TypedAst;
 import nl.stokpop.typemapper.model.TypeNameUtilsKt;
+import nl.stokpop.typemapper.model.UnresolvedReferenceAst;
 
 /**
  * Holds pre-analyzed Kotlin type information from kotlin-type-mapper, indexed by
@@ -30,7 +31,7 @@ public final class KotlinTypeAnalysisContext {
     private static final String KT_EXTENSION = ".kt";
 
     private static final KotlinTypeAnalysisContext EMPTY = new KotlinTypeAnalysisContext(
-            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
+            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
 
     /** Map from absolute file path → line → list of call sites on that line. */
     private final Map<String, Map<Integer, List<CallSiteAst>>> callIndex;
@@ -45,13 +46,18 @@ public final class KotlinTypeAnalysisContext {
      */
     private final Map<String, List<String>> typeHierarchy;
 
+    /** Map from absolute file path → line → list of unresolved references on that line. */
+    private final Map<String, Map<Integer, List<UnresolvedReferenceAst>>> unresolvedIndex;
+
     private KotlinTypeAnalysisContext(
             Map<String, Map<Integer, List<CallSiteAst>>> callIndex,
             Map<String, Map<Integer, List<DeclarationAst>>> declIndex,
-            Map<String, List<String>> typeHierarchy) {
+            Map<String, List<String>> typeHierarchy,
+            Map<String, Map<Integer, List<UnresolvedReferenceAst>>> unresolvedIndex) {
         this.callIndex = callIndex;
         this.declIndex = declIndex;
         this.typeHierarchy = typeHierarchy;
+        this.unresolvedIndex = unresolvedIndex;
     }
 
     /** Returns a no-op context (all lookups return empty lists). */
@@ -59,10 +65,11 @@ public final class KotlinTypeAnalysisContext {
         return EMPTY;
     }
 
-    /** Builds a context from a {@link TypedAst}, indexing all call sites and declarations. */
+    /** Builds a context from a {@link TypedAst}, indexing all call sites, declarations, and unresolved references. */
     public static KotlinTypeAnalysisContext from(TypedAst ast) {
         Map<String, Map<Integer, List<CallSiteAst>>> callIdx = new HashMap<>();
         Map<String, Map<Integer, List<DeclarationAst>>> declIdx = new HashMap<>();
+        Map<String, Map<Integer, List<UnresolvedReferenceAst>>> unresolvedIdx = new HashMap<>();
 
         String sourceRoot = ast.getSourceRoot();
         for (FileAst file : ast.getFiles()) {
@@ -87,8 +94,16 @@ public final class KotlinTypeAnalysisContext {
                        .computeIfAbsent(decl.getLine(), k -> new ArrayList<>())
                        .add(decl);
             }
+            for (UnresolvedReferenceAst unresolved : file.getUnresolvedReferences()) {
+                unresolvedIdx.computeIfAbsent(absPath, k -> new HashMap<>())
+                             .computeIfAbsent(unresolved.getLine(), k -> new ArrayList<>())
+                             .add(unresolved);
+                unresolvedIdx.computeIfAbsent(basename, k -> new HashMap<>())
+                             .computeIfAbsent(unresolved.getLine(), k -> new ArrayList<>())
+                             .add(unresolved);
+            }
         }
-        return new KotlinTypeAnalysisContext(callIdx, declIdx, ast.getTypeHierarchy());
+        return new KotlinTypeAnalysisContext(callIdx, declIdx, ast.getTypeHierarchy(), unresolvedIdx);
     }
 
     /**
@@ -97,6 +112,16 @@ public final class KotlinTypeAnalysisContext {
      * line-number differences between PMD's ANTLR parser and kotlin-type-mapper's PSI.
      */
     public List<CallSiteAst> callSitesAt(String absFilePath, int line) {
+        return callSitesInRange(absFilePath, line, line);
+    }
+
+    /**
+     * Returns all call sites on any line in [{@code beginLine}, {@code endLine}] for the given file.
+     * Uses the same basename/extension fallback as {@link #callSitesAt}.
+     * Used for multi-line expressions where the method call may be on a different line
+     * than the start of the expression (e.g. chained calls split across lines).
+     */
+    public List<CallSiteAst> callSitesInRange(String absFilePath, int beginLine, int endLine) {
         Map<Integer, List<CallSiteAst>> byLine = callIndex.get(absFilePath);
         if (byLine == null) {
             // Fallback: try just the filename in case context was built from a different root
@@ -110,19 +135,26 @@ public final class KotlinTypeAnalysisContext {
         if (byLine == null) {
             return Collections.emptyList();
         }
-        List<CallSiteAst> exact = byLine.get(line);
-        if (exact != null && !exact.isEmpty()) {
-            return exact;
+        // Single-line: exact match with ±1 tolerance for PSI/ANTLR offset differences
+        if (beginLine == endLine) {
+            List<CallSiteAst> exact = byLine.get(beginLine);
+            if (exact != null && !exact.isEmpty()) {
+                return exact;
+            }
+            List<CallSiteAst> result = new ArrayList<>();
+            List<CallSiteAst> prev = byLine.get(beginLine - 1);
+            List<CallSiteAst> next = byLine.get(beginLine + 1);
+            if (prev != null) result.addAll(prev);
+            if (next != null) result.addAll(next);
+            return result;
         }
-        // ±1 line fallback
+        // Multi-line: collect all call sites across the entire range
         List<CallSiteAst> result = new ArrayList<>();
-        List<CallSiteAst> prev = byLine.get(line - 1);
-        List<CallSiteAst> next = byLine.get(line + 1);
-        if (prev != null) {
-            result.addAll(prev);
-        }
-        if (next != null) {
-            result.addAll(next);
+        for (int line = beginLine; line <= endLine; line++) {
+            List<CallSiteAst> sites = byLine.get(line);
+            if (sites != null) {
+                result.addAll(sites);
+            }
         }
         return result;
     }
@@ -150,6 +182,38 @@ public final class KotlinTypeAnalysisContext {
         List<DeclarationAst> result = new ArrayList<>();
         List<DeclarationAst> prev = byLine.get(line - 1);
         List<DeclarationAst> next = byLine.get(line + 1);
+        if (prev != null) {
+            result.addAll(prev);
+        }
+        if (next != null) {
+            result.addAll(next);
+        }
+        return result;
+    }
+
+    /**
+     * Returns unresolved references recorded at the given file and line.
+     * Also checks line ± 1 as a fallback.
+     */
+    public List<UnresolvedReferenceAst> unresolvedReferencesAt(String absFilePath, int line) {
+        Map<Integer, List<UnresolvedReferenceAst>> byLine = unresolvedIndex.get(absFilePath);
+        if (byLine == null) {
+            String basename = new File(absFilePath).getName();
+            byLine = unresolvedIndex.get(basename);
+            if (byLine == null && !basename.endsWith(KT_EXTENSION)) {
+                byLine = unresolvedIndex.get(basename + KT_EXTENSION);
+            }
+        }
+        if (byLine == null) {
+            return Collections.emptyList();
+        }
+        List<UnresolvedReferenceAst> exact = byLine.get(line);
+        if (exact != null && !exact.isEmpty()) {
+            return exact;
+        }
+        List<UnresolvedReferenceAst> result = new ArrayList<>();
+        List<UnresolvedReferenceAst> prev = byLine.get(line - 1);
+        List<UnresolvedReferenceAst> next = byLine.get(line + 1);
         if (prev != null) {
             result.addAll(prev);
         }
