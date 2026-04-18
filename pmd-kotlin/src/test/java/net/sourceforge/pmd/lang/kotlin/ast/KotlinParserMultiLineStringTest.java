@@ -4,131 +4,40 @@
 
 package net.sourceforge.pmd.lang.kotlin.ast;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
-import net.sourceforge.pmd.lang.ast.NodeStream;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtKotlinFile;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringExpression;
-import net.sourceforge.pmd.lang.kotlin.ast.KotlinParser.KtMultiLineStringLiteral;
-
 /**
- * Minimal test that parses a Kotlin snippets with new syntax and see if there
- * are no parsing issues.
+ * Tree dump tests for Kotlin multi-line string parsing.
  */
-class KotlinParserMultiLineStringTest {
-
-    // assume that KotlinParsingHelper is thread safe to use in parallel tests
-    private final KotlinParsingHelper kotlinParsingHelper = KotlinParsingHelper.DEFAULT.withResourceContext(getClass());
+class KotlinParserMultiLineStringTest extends BaseKotlinTreeDumpTest {
 
     @Test
     void testMultiLineStringRefs() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringRefs.kt");
-
-        // In this grammar, `$identifier` (and multi-dollar variants like `$$$productName`) are represented
-        // as `MultiLineStrRef` tokens inside `KtMultiLineStringContent`. `KtMultiLineStringExpression` is
-        // reserved for `$+{...}` forms.
-        List<KtMultiLineStringLiteral> literals = root.descendants(KtMultiLineStringLiteral.class).toList();
-        assertEquals(1, literals.size(), "Expected exactly one multi-line string literal");
-
-        long refCount = findTerminalNodes(root, KotlinParser.MultiLineStrRef).count();
-        assertEquals(1, refCount, "Expected one multi-line string ref ($$$productName)");
-
-        // There is no `${...}` / `$$${...}` in this snippet.
-        assertEquals(0, root.descendants(KtMultiLineStringExpression.class).count(), "Expected no multi-line string expression entries");
+        doTest("MultiLineStringRefs");
     }
 
     @Test
     void testMultiLineStringExpressions() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringExpressions.kt");
-
-        // In this grammar, `$identifier` (and multi-dollar variants like `$$$productName`) are represented
-        // as `MultiLineStrRef` tokens inside `KtMultiLineStringContent`. `KtMultiLineStringExpression` is
-        // reserved for `$+{...}` forms.
-        List<KtMultiLineStringLiteral> literals = root.descendants(KtMultiLineStringLiteral.class).toList();
-        assertEquals(1, literals.size(), "Expected exactly one multi-line string literal");
-
-        // check number of dollars in the prefix before the triple quotes
-        List<KotlinTerminalNode> nodes = literals.get(0).children(KotlinTerminalNode.class).toList();
-        assertEquals(3, nodes.size()); // expected: '$$$' and '"""' and '"""'
-        // this is to demonstrate the potential matching of the real multi-dollar expression in next step
-        assertEquals("$$$", nodes.get(0).getText(), "Expected the first token to be the triple dollar prefix");
-
-        // With Kotlin-style min-dollar gating for `${...}` in multi-dollar raw strings:
-        // - `$${...}` starts an entry (run length 2 < prefix 3 is *not* enough) -> treated as text
-        // - `$$${...}` starts an entry (run length 3 == prefix 3) -> parsed as one expression entry
-        List<KtMultiLineStringExpression> expressions = root.descendants(KtMultiLineStringExpression.class).toList();
-        assertEquals(1, expressions.size(), "Expected one multi-line string expression entry");
+        doTest("MultiLineStringExpressions");
     }
 
     @Test
     void testSingleDollarRefWithoutPrefix() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/SingleDollarRefNoPrefix.kt");
-
-        // In plain strings, `$myRef` is a LineStrRef. In raw multi-line strings without multi-dollar
-        // prefix, `$myRef` is also a MultiLineStrRef.
-        long lineRefCount = findTerminalNodes(root, KotlinParser.LineStrRef).count();
-        assertEquals(1, lineRefCount, "Expected one line string ref ($myRef)");
-
-        long multiLineRefCount = findTerminalNodes(root, KotlinParser.MultiLineStrRef).count();
-        assertEquals(1, multiLineRefCount, "Expected one multiline raw string ref ($myRef)");
+        doTest("SingleDollarRefNoPrefix");
     }
 
     @Test
     void testMultiDollarRefSplitting() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringRefSplitting.kt");
-
-        // In a `$$$"""` raw string, `$$$$myRef` should be tokenized as:
-        // - one literal '$' (text)
-        // - one reference '$$$myRef'
-        // This mirrors what we do for expressions like `$$$${...}`.
-        long refCount = findTerminalNodes(root, KotlinParser.MultiLineStrRef).count();
-        assertEquals(1, refCount, "Expected one multiline ref ($$$myRef)");
-
-        long singleDollarTextCount = findTerminalNodes(root, KotlinParser.MultiLineStrText, "$").count();
-        assertEquals(1, singleDollarTextCount, "Expected one literal '$' text token from splitting");
+        doTest("MultiLineStringRefSplitting");
     }
 
     @Test
     void testMultiDollarExpressionSplitting() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/MultiLineStringExprSplitting.kt");
-
-        // In a `$$$"""` raw string, `$$$$${...}` should be tokenized as:
-        // - one literal '$' (text)
-        // - one expression entry starting with `$$$${...}`
-        List<KtMultiLineStringExpression> expressions = root.descendants(KtMultiLineStringExpression.class).toList();
-        assertEquals(1, expressions.size(), "Expected one multiline expression entry from splitting");
-
-        long singleDollarTextCount = findTerminalNodes(root, KotlinParser.MultiLineStrText, "$").count();
-        assertTrue(singleDollarTextCount >= 1, "Expected at least one literal '$' text token from splitting");
+        doTest("MultiLineStringExprSplitting");
     }
 
     @Test
     void testSingleDollarExpressionWithoutPrefix() {
-        KtKotlinFile root = kotlinParsingHelper.parseResource("testdata/SingleDollarExprNoPrefix.kt");
-
-        long lineExprStartCount = findTerminalNodes(root, KotlinParser.LineStrExprStart).count();
-
-        assertEquals(1, lineExprStartCount, "Expected one line string expression start (${...})");
-
-        List<KtMultiLineStringExpression> multilineExprs = root.descendants(KtMultiLineStringExpression.class).toList();
-        assertEquals(1, multilineExprs.size(), "Expected one multiline raw string expression (${...})");
-    }
-
-    private static NodeStream<KotlinTerminalNode> findTerminalNodes(KotlinNode node, int tokenType) {
-        return node.descendants(KotlinTerminalNode.class)
-                .filter(n -> n.getFirstAntlrToken().getType() == tokenType);
-    }
-
-    private static NodeStream<KotlinTerminalNode> findTerminalNodes(KotlinNode node, int tokenType, String exactText) {
-        NodeStream<KotlinTerminalNode> stream = findTerminalNodes(node, tokenType);
-        if (exactText == null) {
-            return stream;
-        }
-        return stream.filter(n -> exactText.equals(n.getText()));
+        doTest("SingleDollarExprNoPrefix");
     }
 }
