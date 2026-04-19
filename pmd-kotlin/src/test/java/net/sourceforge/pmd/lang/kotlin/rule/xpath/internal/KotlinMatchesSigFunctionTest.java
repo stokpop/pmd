@@ -4,7 +4,6 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -126,7 +125,7 @@ class KotlinMatchesSigFunctionTest {
     // --- AvoidPrintStackTrace ---
 
     @Test
-    void printStackTrace_matchesBadCase() {
+    void printStackTraceMatchesBadCase() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PrintStackTraceUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]",
@@ -137,7 +136,7 @@ class KotlinMatchesSigFunctionTest {
     }
 
     @Test
-    void printStackTrace_doesNotMatchRethrow() {
+    void printStackTraceDoesNotMatchRethrow() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PrintStackTraceUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]",
@@ -150,7 +149,7 @@ class KotlinMatchesSigFunctionTest {
     // --- SystemPrintln ---
 
     @Test
-    void systemOutPrintln_matchesBadCase() {
+    void systemOutPrintlnMatchesBadCase() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/SystemPrintlnUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.io.PrintStream#println(*)')]",
@@ -163,7 +162,7 @@ class KotlinMatchesSigFunctionTest {
     }
 
     @Test
-    void systemPrintln_doesNotMatchUnrelatedCode() {
+    void systemPrintlnDoesNotMatchUnrelatedCode() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/SystemPrintlnUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.io.PrintStream#println(*)')]",
@@ -176,7 +175,7 @@ class KotlinMatchesSigFunctionTest {
     // --- AvoidCalendarDateCreation ---
 
     @Test
-    void calendarGetInstance_matchesBadCase() {
+    void calendarGetInstanceMatchesBadCase() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/CalendarDateUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.Calendar#getInstance(*)')]",
@@ -187,7 +186,7 @@ class KotlinMatchesSigFunctionTest {
     }
 
     @Test
-    void calendarGetInstance_doesNotMatchLocalDateTimeNow() {
+    void calendarGetInstanceDoesNotMatchLocalDateTimeNow() {
         File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/CalendarDateUsage.kt");
         Report report = runXPath(
                 "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.util.Calendar#getInstance(*)')]",

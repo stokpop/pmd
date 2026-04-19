@@ -4,17 +4,7 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
-import java.util.List;
-
-import org.checkerframework.checker.nullness.qual.Nullable;
-
-import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
-import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionDefinition;
-import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
-
-import nl.stokpop.typemapper.model.CallSiteAst;
-import nl.stokpop.typemapper.model.DeclarationAst;
 
 /**
  * XPath function {@code pmd-kotlin:typeIsExactly(typeName)}.
@@ -61,71 +51,20 @@ public final class KotlinTypeIsExactlyFunction extends BaseKotlinXPathFunction {
         return new TypeIsExactlyFunctionCall();
     }
 
-    private static final class TypeIsExactlyFunctionCall implements FunctionCall {
-
+    private static final class TypeIsExactlyFunctionCall extends AbstractKotlinTypeIsFunctionCall {
         @Override
-        public Object call(@Nullable Node contextNode, Object[] arguments) throws XPathFunctionException {
-            if (contextNode == null) {
-                return false;
-            }
-            String typeName = (String) arguments[0];
-            KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
-
-            // Fast path: use node attributes set by the annotation pass.
-            if (contextNode instanceof KotlinNode
-                    && matchesNodeAttribute((KotlinNode) contextNode, typeName, ctx)) {
-                return true;
-            }
-
-            String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
-            int line = contextNode.getBeginLine();
-
-            // Use declaration data authoritatively if available — do NOT fall through to call-site
-            // analysis, which would match the initializer's return type (e.g. ArrayList) instead
-            // of the declared type (e.g. List), causing false positives.
-            List<DeclarationAst> decls = ctx.declarationsAt(absPath, line);
-            if (!decls.isEmpty()) {
-                return matchesAnyDeclaration(decls, typeName, ctx);
-            }
-            return matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
-        }
-
-        private static boolean matchesNodeAttribute(
-                KotlinNode node, String typeName, KotlinTypeAnalysisContext ctx) {
+        protected boolean matchesNodeAttribute(KotlinNode node, String typeName, KotlinTypeAnalysisContext ctx) {
             String nodeType = node.getTypeName();
             if (nodeType != null) {
                 return ctx.isTypeEquivalent(typeName, nodeType);
             }
             String returnType = node.getReturnTypeName();
-            if (returnType != null) {
-                return ctx.isTypeEquivalent(typeName, returnType);
-            }
-            return false;
+            return returnType != null && ctx.isTypeEquivalent(typeName, returnType);
         }
 
-        private static boolean matchesAnyDeclaration(
-                List<DeclarationAst> decls, String typeName, KotlinTypeAnalysisContext ctx) {
-            for (DeclarationAst decl : decls) {
-                String type = decl.getType();
-                if (type != null && ctx.isTypeEquivalent(typeName, type)) {
-                    return true;
-                }
-                String returnType = decl.getReturnType();
-                if (returnType != null && ctx.isTypeEquivalent(typeName, returnType)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static boolean matchesAnyCallSite(
-                List<CallSiteAst> calls, String typeName, KotlinTypeAnalysisContext ctx) {
-            for (CallSiteAst call : calls) {
-                if (ctx.isTypeEquivalent(typeName, call.getReturnType())) {
-                    return true;
-                }
-            }
-            return false;
+        @Override
+        protected boolean matchesType(String expectedType, String actualType, KotlinTypeAnalysisContext ctx) {
+            return ctx.isTypeEquivalent(expectedType, actualType);
         }
     }
 }

@@ -9,7 +9,6 @@ import java.util.List;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionDefinition;
 import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
 
 import nl.stokpop.typemapper.model.CallSiteAst;
@@ -98,12 +97,12 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
             if (contextNode == null) {
                 return false;
             }
-            String sig      = (String) arguments[0];
-            String absPath  = contextNode.getTextDocument().getFileId().getAbsolutePath();
-            int beginLine   = contextNode.getBeginLine();
-            int endLine     = contextNode.getEndLine();
-            int beginCol    = contextNode.getBeginColumn();
-            int endCol      = contextNode.getEndColumn();
+            String sig = (String) arguments[0];
+            String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
+            int beginLine = contextNode.getBeginLine();
+            int endLine = contextNode.getEndLine();
+            int beginCol = contextNode.getBeginColumn();
+            int endCol = contextNode.getEndColumn();
             boolean singleLine = endLine == beginLine;
 
             KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();

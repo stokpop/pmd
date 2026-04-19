@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import net.sourceforge.pmd.lang.ast.AstVisitor;

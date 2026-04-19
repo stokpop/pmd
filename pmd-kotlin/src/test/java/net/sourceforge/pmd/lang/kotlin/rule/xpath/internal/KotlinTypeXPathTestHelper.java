@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 
 import nl.stokpop.typemapper.analyzer.KotlinTypeMapper;
 import nl.stokpop.typemapper.model.TypedAst;
