@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.net.URL;
@@ -144,6 +145,20 @@ class KotlinMatchesSigFunctionTest {
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 14),
                 "Line 14 is a re-throw, not printStackTrace — should not match");
+    }
+
+    @Test
+    void printStackTraceDoesNotMatchEnclosingTryBlock() {
+        File kotlinFile = getResource(MATCHES_SIG_RESOURCE_DIR + "/PrintStackTraceUsage.kt");
+        Report report = runXPath(
+                "//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.Throwable#printStackTrace(*)')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertEquals(1, report.getViolations().size(), "Expected exactly one printStackTrace match");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 6),
+                "Expected violation at line 6 (e.printStackTrace())");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 3),
+                "Try block should not match printStackTrace");
     }
 
     // --- SystemPrintln ---

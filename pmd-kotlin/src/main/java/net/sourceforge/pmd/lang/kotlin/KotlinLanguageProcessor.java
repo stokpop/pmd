@@ -126,12 +126,15 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
      * of File objects, forwarded to kotlin-type-mapper so it can resolve external types
      * (e.g. Spring, JPA annotations).
      *
-     * <p>Checks the string property first (command-line / rule property), then falls
-     * back to extracting file URLs from the analysis {@link ClassLoader} — which is
-     * how the PMD Designer propagates the auxiliary classpath.
+     * <p>Resolution order:
+     * <ol>
+     *   <li>String property — set when {@code --aux-classpath} is passed on the command line.</li>
+     *   <li>URLClassLoader hierarchy — how the PMD Designer propagates the auxiliary classpath.</li>
+     *   <li>{@code java.class.path} system property — Maven Surefire puts all test dependencies here.</li>
+     * </ol>
      */
     private List<File> getAuxClasspathEntries() {
-        // 1. String property (e.g. set via --aux-classpath on the command line)
+        // 1. String property (set via --aux-classpath on the command line)
         String raw = jvmBundle.getProperty(JvmLanguagePropertyBundle.AUX_CLASSPATH);
         if (raw != null && !raw.isEmpty()) {
             String sep = System.getProperty("path.separator", ":");
@@ -142,10 +145,31 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
                     entries.add(new File(trimmed));
                 }
             }
+            LOG.debug("kotlin-type-mapper aux classpath from string property ({} entries)", entries.size());
             return entries;
         }
-        // 2. java.class.path system property — Maven Surefire puts all test dependencies here.
-        //    This is the reliable way to get slf4j, javax.xml.xpath, etc. onto kotlin-type-mapper's classpath.
+        // 2. URLClassLoader hierarchy — PMD Designer (and CLI via ClasspathClassLoader) sets this.
+        ClassLoader cl = jvmBundle.getAnalysisClassLoader();
+        List<File> urlEntries = new ArrayList<>();
+        while (cl != null) {
+            if (cl instanceof java.net.URLClassLoader) {
+                for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
+                    if (FILE_PROTOCOL.equals(url.getProtocol())) {
+                        try {
+                            urlEntries.add(new File(url.toURI()));
+                        } catch (URISyntaxException e) {
+                            LOG.debug("Could not convert classpath URL to File: {}", url);
+                        }
+                    }
+                }
+            }
+            cl = cl.getParent();
+        }
+        if (!urlEntries.isEmpty()) {
+            LOG.debug("kotlin-type-mapper aux classpath from URLClassLoader hierarchy ({} entries)", urlEntries.size());
+            return urlEntries;
+        }
+        // 3. java.class.path system property — Maven Surefire puts all test dependencies here.
         String javaClassPath = System.getProperty("java.class.path");
         if (javaClassPath != null && !javaClassPath.isEmpty()) {
             List<File> entries = new ArrayList<>();
@@ -157,25 +181,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             LOG.debug("kotlin-type-mapper aux classpath from java.class.path ({} entries)", entries.size());
             return entries;
         }
-        // 3. URLClassLoader hierarchy (PMD Designer sets a URLClassLoader via setClassLoader)
-        ClassLoader cl = jvmBundle.getAnalysisClassLoader();
-        List<File> entries = new ArrayList<>();
-        while (cl != null) {
-            if (cl instanceof java.net.URLClassLoader) {
-                for (java.net.URL url : ((java.net.URLClassLoader) cl).getURLs()) {
-                    if (FILE_PROTOCOL.equals(url.getProtocol())) {
-                        try {
-                            entries.add(new File(url.toURI()));
-                        } catch (URISyntaxException e) {
-                            LOG.debug("Could not convert classpath URL to File: {}", url);
-                        }
-                    }
-                }
-            }
-            cl = cl.getParent();
-        }
-        LOG.debug("kotlin-type-mapper aux classpath from URLClassLoader hierarchy ({} entries)", entries.size());
-        return entries;
+        return new ArrayList<>();
     }
 
     private static void deleteRecursively(File file) {

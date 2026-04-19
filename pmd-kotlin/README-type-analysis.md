@@ -466,6 +466,77 @@ public Object visitFunctionDeclaration(KtFunctionDeclaration node, Object data) 
 
 ---
 
+## Design Notes
+
+### `matchesSig` multi-line matching — why `PostfixUnarySuffix` begin-lines are used
+
+`matchesSig` needs to work for both single-line and multi-line call expressions. The type-mapper
+records each call site as a `(line, column)` pair; PMD's ANTLR AST records each node as a
+`(beginLine, beginCol, endLine, endCol)` rectangle. The challenge is mapping one to the other.
+
+**Single-line case** is simple: column is in `[beginCol, endCol]` on the same line.
+
+**Multi-line case** arises when a method-call chain is split across lines:
+
+```kotlin
+val expr = xpath
+    .compile("//book")      // PostfixUnarySuffix on line N+1
+```
+
+Here the outer `PostfixUnaryExpression` spans lines N–(N+1), so a naive "collect all call
+sites in [beginLine, endLine]" works. But it over-collects for block expressions:
+
+```kotlin
+synchronized(lock) {        // PostfixUnaryExpression for the synchronized() call: lines 1-4
+    lock.notify()           // inner PostfixUnaryExpression: line 3 — should NOT fire on outer
+}
+
+try {                       // PostfixUnaryExpression for the try block: lines 1-5
+    doWork()
+} catch (e: Exception) {
+    e.printStackTrace()     // inner PostfixUnaryExpression: line 4 — should NOT fire on outer
+}
+```
+
+The fix (introduced after a regression in the `callSitesInRange` expansion): for multi-line
+nodes, **only accept call sites whose line matches the begin-line of a direct
+`PostfixUnarySuffix` child**.
+
+```
+PostfixUnaryExpression (lines 1-4)         ← outer, synchronized() call
+  simpleIdentifier "synchronized" (line 1)
+  PostfixUnarySuffix (line 1)              ← call args — begin-line 1
+    CallSuffix
+      ValueArguments (line 1) [lock]
+      AnnotatedLambda/LambdaBody (lines 1-4)
+        PostfixUnaryExpression (line 3)    ← inner, lock.notify() — NOT a direct child
+```
+
+The outer node has one direct `PostfixUnarySuffix` starting on **line 1**. The inner
+`lock.notify()` call site is on **line 3** — not in `{1}` → excluded. ✓
+
+For a chained call:
+
+```
+PostfixUnaryExpression (lines 1-2)         ← outer, xpath.compile() chain
+  simpleIdentifier "xpath" (line 1)
+  PostfixUnarySuffix (line 2)              ← NavigationSuffix ".compile" — begin-line 2
+  PostfixUnarySuffix (line 2)              ← CallSuffix "()" — begin-line 2
+```
+
+Direct `PostfixUnarySuffix` begin-lines: `{2}`. The `.compile()` call site is on **line 2** →
+included. ✓
+
+`try {}` and `when {}` expressions have **no direct `PostfixUnarySuffix` children** at all,
+so they return `false` immediately (early exit before even checking signatures).
+
+This design means rule authors do **not** need to add extra structural guards to XPath rules
+using `matchesSig` — the function itself is precise. Compare with rules that use structural
+attributes directly (e.g. `PostfixUnarySuffix/NavigationSuffix[@Identifier='toString']`), where
+the guard is part of the XPath and `matchesSig` is purely for type validation.
+
+---
+
 ## Known Limitations
 
 - Requires pre-computed type analysis. Without it, both functions return `false` (safe default).

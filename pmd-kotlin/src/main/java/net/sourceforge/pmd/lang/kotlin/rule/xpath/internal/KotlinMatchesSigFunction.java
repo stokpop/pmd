@@ -4,7 +4,9 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -40,8 +42,12 @@ import nl.stokpop.typemapper.model.SignatureMatcherKt;
  * {@code UnresolvedType} rule will fire as a signal, while {@code matchesSig} returns {@code false}.
  *
  * <p><b>Multi-line chain support:</b> When a {@code PostfixUnaryExpression} spans multiple lines
- * (e.g. a method call split across lines), all call sites in the full line range are checked,
- * so {@code matchesSig} works correctly for chained calls like:
+ * (e.g. a method call split across lines), call sites are restricted to lines where a direct
+ * {@code PostfixUnarySuffix} child starts — covering all chain links while excluding call sites
+ * that belong to nested lambda bodies or block arguments. Block-like expressions
+ * ({@code try}, {@code when}, etc.) that have no direct {@code PostfixUnarySuffix} children
+ * are never matched, preventing false positives from enclosing blocks. Example of a correctly
+ * matched multi-line chain:
  * <pre>{@code
  * val expr = xpath
  *     .compile("//book") // call on line N+1 — correctly matched
@@ -97,6 +103,9 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
             if (contextNode == null) {
                 return false;
             }
+            if (!"PostfixUnaryExpression".equals(contextNode.getXPathNodeName())) {
+                return false;
+            }
             String sig = (String) arguments[0];
             String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
             int beginLine = contextNode.getBeginLine();
@@ -107,8 +116,29 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
 
             KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
             List<CallSiteAst> sites = ctx.callSitesInRange(absPath, beginLine, endLine);
+
+            // For multi-line nodes, restrict to call sites on lines where direct
+            // PostfixUnarySuffix children begin.  This prevents enclosing blocks
+            // (try {}, synchronized {}, lambda bodies) from collecting inner call
+            // sites that belong to nested PostfixUnaryExpression children.
+            Set<Integer> suffixBeginLines = null;
+            if (!singleLine) {
+                suffixBeginLines = new HashSet<>();
+                for (Node child : contextNode.children()) {
+                    if ("PostfixUnarySuffix".equals(child.getXPathNodeName())) {
+                        suffixBeginLines.add(child.getBeginLine());
+                    }
+                }
+                if (suffixBeginLines.isEmpty()) {
+                    // No direct PostfixUnarySuffix children: this node is a block-like
+                    // expression (try, when, …), not a direct method-call chain.
+                    return false;
+                }
+            }
+
             for (CallSiteAst call : sites) {
-                boolean callSiteMatch = matchesCallSite(call, beginLine, beginCol, endCol, singleLine);
+                boolean callSiteMatch = matchesCallSite(call, beginLine, beginCol, endCol,
+                        singleLine, suffixBeginLines);
                 boolean sigMatch = callSiteMatch && SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf);
                 if (sigMatch) {
                     return true;
@@ -119,14 +149,17 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
 
         private static boolean matchesCallSite(CallSiteAst call,
                                                int beginLine, int beginCol, int endCol,
-                                               boolean singleLine) {
+                                               boolean singleLine,
+                                               @Nullable Set<Integer> suffixBeginLines) {
             if (singleLine) {
                 // Single-line: filter by column range to distinguish multiple calls on the same line
                 int col = call.getColumn();
                 return col >= beginCol && col <= endCol;
             }
-            // First line of multi-line expression: call must start at or after the expression start
-            return call.getLine() != beginLine || call.getColumn() >= beginCol;
+            // Multi-line: only accept call sites on lines where a direct PostfixUnarySuffix starts.
+            // This constrains matching to the chain links of this expression and avoids picking up
+            // call sites that are deeply nested inside lambda/block arguments.
+            return suffixBeginLines != null && suffixBeginLines.contains(call.getLine());
         }
     }
 }
