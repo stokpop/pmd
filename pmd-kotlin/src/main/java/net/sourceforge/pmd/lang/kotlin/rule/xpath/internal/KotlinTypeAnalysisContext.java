@@ -144,8 +144,12 @@ public final class KotlinTypeAnalysisContext {
             List<CallSiteAst> result = new ArrayList<>();
             List<CallSiteAst> prev = byLine.get(beginLine - 1);
             List<CallSiteAst> next = byLine.get(beginLine + 1);
-            if (prev != null) result.addAll(prev);
-            if (next != null) result.addAll(next);
+            if (prev != null) {
+                result.addAll(prev);
+            }
+            if (next != null) {
+                result.addAll(next);
+            }
             return result;
         }
         // Multi-line: collect all call sites across the entire range

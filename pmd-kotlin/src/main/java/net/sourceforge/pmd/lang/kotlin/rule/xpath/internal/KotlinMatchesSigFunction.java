@@ -104,7 +104,7 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
             int endLine     = contextNode.getEndLine();
             int beginCol    = contextNode.getBeginColumn();
             int endCol      = contextNode.getEndColumn();
-            boolean singleLine = (endLine == beginLine);
+            boolean singleLine = endLine == beginLine;
 
             KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
             List<CallSiteAst> sites = ctx.callSitesInRange(absPath, beginLine, endLine);
@@ -126,12 +126,8 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
                 int col = call.getColumn();
                 return col >= beginCol && col <= endCol;
             }
-            if (call.getLine() == beginLine) {
-                // First line of multi-line expression: call must start at or after the expression start
-                return call.getColumn() >= beginCol;
-            }
-            // Any other line in the range: accept all calls (no column constraint)
-            return true;
+            // First line of multi-line expression: call must start at or after the expression start
+            return call.getLine() != beginLine || call.getColumn() >= beginCol;
         }
     }
 }

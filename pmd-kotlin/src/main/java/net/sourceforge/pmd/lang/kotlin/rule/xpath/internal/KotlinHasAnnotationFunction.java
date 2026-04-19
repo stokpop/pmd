@@ -85,21 +85,9 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
             String simpleName = simpleNameOf(className);
             KotlinNode declNode = (KotlinNode) contextNode;
 
-            // Path 1 — @TypeName on UnescapedAnnotation children (set by
-            // KotlinTypeAnnotationVisitor when kotlin-type-mapper ran and resolved FQNs)
-            if (checkAnnotationChildrenByTypeName(declNode, className, simpleName)) {
-                return true;
-            }
-
-            // Path 2 — ANNOTATION_NAMES_KEY comma list on the declaration node
-            if (matchesAnnotationFqNames(declNode, className, simpleName)) {
-                return true;
-            }
-
-            // Path 3 — source-text fallback: read the annotation name as written
-            // in source via text region. Only used when className is a simple (unqualified)
-            // name — if a FQN is given, FQN resolution via paths 1/2 is required.
-            return !className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName);
+            return checkAnnotationChildrenByTypeName(declNode, className, simpleName)
+                    || matchesAnnotationFqNames(declNode, className, simpleName)
+                    || (!className.contains(".") && checkAnnotationChildrenBySourceText(declNode, className, simpleName));
         }
 
         private static boolean matchesAnnotationFqNames(
@@ -214,7 +202,7 @@ public final class KotlinHasAnnotationFunction extends BaseKotlinXPathFunction {
                     return userType.getTextDocument()
                             .sliceOriginalText(userType.getTextRegion())
                             .toString();
-                } catch (Exception e) {
+                } catch (IndexOutOfBoundsException e) {
                     LOG.debug("Could not slice source text for annotation node", e);
                     return null;
                 }

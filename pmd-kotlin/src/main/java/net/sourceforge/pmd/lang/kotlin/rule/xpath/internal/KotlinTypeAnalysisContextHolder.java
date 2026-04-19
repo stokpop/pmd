@@ -4,6 +4,8 @@
 
 package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * Holds the active {@link KotlinTypeAnalysisContext} for XPath function evaluation.
  *
@@ -17,19 +19,20 @@ package net.sourceforge.pmd.lang.kotlin.rule.xpath.internal;
  */
 public final class KotlinTypeAnalysisContextHolder {
 
-    private static volatile KotlinTypeAnalysisContext globalContext = KotlinTypeAnalysisContext.empty();
-    private static final ThreadLocal<KotlinTypeAnalysisContext> threadContext = new ThreadLocal<>();
+    private static final AtomicReference<KotlinTypeAnalysisContext> GLOBAL_CONTEXT =
+            new AtomicReference<>(KotlinTypeAnalysisContext.empty());
+    private static final ThreadLocal<KotlinTypeAnalysisContext> THREAD_CONTEXT = new ThreadLocal<>();
 
     private KotlinTypeAnalysisContextHolder() {}
 
     /** Sets the context for the current thread (overrides the global context). */
     public static void set(KotlinTypeAnalysisContext ctx) {
-        threadContext.set(ctx);
+        THREAD_CONTEXT.set(ctx);
     }
 
     /** Sets the global context used when no thread-local context is active. */
     public static void setGlobal(KotlinTypeAnalysisContext ctx) {
-        globalContext = ctx;
+        GLOBAL_CONTEXT.set(ctx);
     }
 
     /**
@@ -37,17 +40,17 @@ public final class KotlinTypeAnalysisContextHolder {
      * Never returns {@code null}; falls back to the empty no-op context.
      */
     public static KotlinTypeAnalysisContext get() {
-        KotlinTypeAnalysisContext ctx = threadContext.get();
-        return ctx != null ? ctx : globalContext;
+        KotlinTypeAnalysisContext ctx = THREAD_CONTEXT.get();
+        return ctx != null ? ctx : GLOBAL_CONTEXT.get();
     }
 
     /** Removes the thread-local context for the current thread. */
     public static void clear() {
-        threadContext.remove();
+        THREAD_CONTEXT.remove();
     }
 
     /** Resets the global context to the empty no-op context. */
     public static void clearGlobal() {
-        globalContext = KotlinTypeAnalysisContext.empty();
+        GLOBAL_CONTEXT.set(KotlinTypeAnalysisContext.empty());
     }
 }

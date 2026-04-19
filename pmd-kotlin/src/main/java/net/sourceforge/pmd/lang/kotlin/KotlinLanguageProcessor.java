@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
     private static final String FILE_PROTOCOL = "file";
 
     /** Populated in {@link #launchAnalysis} before any file is parsed. */
-    private volatile KotlinTypeAnnotationVisitor annotationVisitor;
+    private final AtomicReference<KotlinTypeAnnotationVisitor> annotationVisitor = new AtomicReference<>();
 
     private final KotlinHandler baseHandler;
     private final JvmLanguagePropertyBundle jvmBundle;
@@ -80,12 +81,11 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         return super.launchAnalysis(task);
     }
 
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private void runTypeAnalysis(List<TextFile> allFiles) {
         List<TextFile> ktFiles = new ArrayList<>();
-        for (TextFile f : allFiles) {
-            if (f.getLanguageVersion().getLanguage().equals(getLanguage())) {
-                ktFiles.add(f);
+        for (int i = 0; i < allFiles.size(); i++) {
+            if (allFiles.get(i).getLanguageVersion().getLanguage().equals(getLanguage())) {
+                ktFiles.add(allFiles.get(i));
             }
         }
         if (ktFiles.isEmpty()) {
@@ -100,9 +100,9 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             TypedAst ast = new KotlinTypeMapper(tempDir, getAuxClasspathEntries(), false).analyze();
             KotlinTypeAnalysisContext context = KotlinTypeAnalysisContext.from(ast);
             KotlinTypeAnalysisContextHolder.setGlobal(context);
-            annotationVisitor = new KotlinTypeAnnotationVisitor(ast);
+            annotationVisitor.set(new KotlinTypeAnnotationVisitor(ast));
             LOG.debug("kotlin-type-mapper analyzed {} file(s)", ktFiles.size());
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LOG.warn("kotlin-type-mapper analysis failed; typeIs/matchesSig will return false", e);
         } finally {
             if (tempDir != null) {
@@ -112,9 +112,9 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
     }
 
     private static void writeToTempDir(List<TextFile> ktFiles, File tempDir) throws IOException {
-        for (TextFile ktFile : ktFiles) {
-            String filename = sanitizeKtFilename(ktFile.getFileId().getFileName());
-            TextFileContent content = ktFile.readContents();
+        for (int i = 0; i < ktFiles.size(); i++) {
+            String filename = sanitizeKtFilename(ktFiles.get(i).getFileId().getFileName());
+            TextFileContent content = ktFiles.get(i).readContents();
             String text = content.getNormalizedText().toString();
             Files.write(new File(tempDir, filename).toPath(),
                         text.getBytes(StandardCharsets.UTF_8));
@@ -191,7 +191,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
     }
 
     void annotateIfPossible(KotlinNode root, String absPath, String sourceText) {
-        KotlinTypeAnnotationVisitor v = annotationVisitor;
+        KotlinTypeAnnotationVisitor v = annotationVisitor.get();
         if (v == null) {
             // Designer / single-file mode: launchAnalysis() was never called, so run
             // kotlin-type-mapper inline on this one file.
@@ -221,7 +221,6 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         return name + ".kt";
     }
 
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private KotlinTypeAnnotationVisitor runSingleFileAnalysis(String filename, String sourceText) {
         File tempDir = null;
         try {
@@ -233,7 +232,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             KotlinTypeAnalysisContextHolder.setGlobal(context);
             LOG.debug("kotlin-type-mapper single-file analysis complete for {}", filename);
             return new KotlinTypeAnnotationVisitor(ast);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             LOG.warn("kotlin-type-mapper single-file analysis failed for {}; typeIs/matchesSig will return false", filename, e);
             return null;
         } finally {

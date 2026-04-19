@@ -123,7 +123,7 @@ public final class KotlinTypeAnnotationVisitor {
         public Void visitClassParameter(KotlinParser.KtClassParameter node, Void data) {
             List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
             for (DeclarationAst decl : decls) {
-                if (DeclarationKind.PROPERTY.equals(decl.getKind()) && decl.getType() != null) {
+                if (decl.getKind() == DeclarationKind.PROPERTY && decl.getType() != null) {
                     node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                     setAnnotationAttributes(node, decl.getAnnotations());
                     break;
@@ -150,7 +150,7 @@ public final class KotlinTypeAnnotationVisitor {
         public Void visitCatchBlock(KotlinParser.KtCatchBlock node, Void data) {
             List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
             for (DeclarationAst decl : decls) {
-                if (DeclarationKind.CATCH_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
+                if (decl.getKind() == DeclarationKind.CATCH_VARIABLE && decl.getType() != null) {
                     node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                     break;
                 }
@@ -162,7 +162,7 @@ public final class KotlinTypeAnnotationVisitor {
         public Void visitForStatement(KotlinParser.KtForStatement node, Void data) {
             List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
             for (DeclarationAst decl : decls) {
-                if (DeclarationKind.FOR_LOOP_VARIABLE.equals(decl.getKind()) && decl.getType() != null) {
+                if (decl.getKind() == DeclarationKind.FOR_LOOP_VARIABLE && decl.getType() != null) {
                     node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getType());
                     break;
                 }
@@ -174,11 +174,11 @@ public final class KotlinTypeAnnotationVisitor {
         public Void visitClassDeclaration(KotlinParser.KtClassDeclaration node, Void data) {
             List<DeclarationAst> decls = lookupWithFallback(byLine, node.getBeginLine());
             for (DeclarationAst decl : decls) {
-                if (DeclarationKind.CLASS.equals(decl.getKind())
-                        || DeclarationKind.DATA_CLASS.equals(decl.getKind())
-                        || DeclarationKind.SEALED_CLASS.equals(decl.getKind())
-                        || DeclarationKind.INTERFACE.equals(decl.getKind())
-                        || DeclarationKind.ENUM.equals(decl.getKind())) {
+                if (decl.getKind() == DeclarationKind.CLASS
+                        || decl.getKind() == DeclarationKind.DATA_CLASS
+                        || decl.getKind() == DeclarationKind.SEALED_CLASS
+                        || decl.getKind() == DeclarationKind.INTERFACE
+                        || decl.getKind() == DeclarationKind.ENUM) {
                     // Set @TypeName to the class's own FQN (useful in Designer + XPath)
                     node.getUserMap().set(KotlinNode.TYPE_NAME_KEY, decl.getFqName());
                     setAnnotationAttributes(node, decl.getAnnotations());
@@ -246,7 +246,6 @@ public final class KotlinTypeAnnotationVisitor {
      * Sets {@link KotlinNode#TYPE_NAME_KEY} on a single {@code KtDelegationSpecifier}
      * by extracting the written type name from its contained {@code KtUserType}.
      */
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static void annotateDelegationSpecifier(KotlinParser.KtDelegationSpecifier spec,
             Map<String, String> simpleToFqn) {
         KotlinParser.KtUserType userType = findUserTypeInDelegationSpecifier(spec);
@@ -265,7 +264,7 @@ public final class KotlinTypeAnnotationVisitor {
             if (fqn != null) {
                 spec.getUserMap().set(KotlinNode.TYPE_NAME_KEY, fqn);
             }
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException e) {
             LOG.debug("Could not read text region for delegation specifier in {}", spec, e);
         }
     }
@@ -448,7 +447,6 @@ public final class KotlinTypeAnnotationVisitor {
      * {@code KtUserType} node. Returns e.g. {@code "Column"} or
      * {@code "javax.persistence.Column"}, or {@code null} on failure.
      */
-    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static String getAnnotationWrittenName(KotlinParser.KtUnescapedAnnotation annNode) {
         KotlinParser.KtUserType userType = findUserType(annNode);
         if (userType == null) {
@@ -458,7 +456,7 @@ public final class KotlinTypeAnnotationVisitor {
             return userType.getTextDocument()
                     .sliceOriginalText(userType.getTextRegion())
                     .toString();
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException e) {
             LOG.debug("Could not read text region for annotation in {}", annNode, e);
             return null;
         }
