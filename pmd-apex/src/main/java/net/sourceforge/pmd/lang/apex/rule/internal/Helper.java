@@ -33,6 +33,7 @@ import net.sourceforge.pmd.lang.apex.ast.ApexNode;
  * Helper methods
  *
  * @author sergey.gorbaty
+ * @author dschach
  *
  */
 public final class Helper {
@@ -43,15 +44,23 @@ public final class Helper {
         throw new AssertionError("Can't instantiate helper classes");
     }
 
+    /**
+     * Check if this node is a test method or a test class.
+     * It used to do a check if the class name ended in "Test", but that is not specific.
+     * @author sergey.gorbaty
+     * @author dschach
+     * @since 7.24.0 No longer check class name. Only isTest() in apex parser is used.
+     * 
+     * @param node The node to check
+     * @return `true` if test class or method
+     */
     public static boolean isTestMethodOrClass(final ApexNode<?> node) {
         for (final ASTModifierNode m : node.children(ASTModifierNode.class)) {
             if (m.isTest()) {
                 return true;
             }
         }
-
-        final String className = node.getDefiningType();
-        return className.endsWith("Test");
+        return false;
     }
 
     public static boolean foundAnySOQLorSOSL(final ApexNode<?> node) {
