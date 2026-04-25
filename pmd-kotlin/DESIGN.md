@@ -494,7 +494,9 @@ or functional alternatives; suppress with `// NOPMD` where intentional.
 
 ### 13.1 `SimplifyBooleanExpressions`
 
-Matches equality comparisons where one operand is a bare boolean literal:
+Matches two kinds of redundant boolean expressions:
+
+**Equality comparisons with a boolean literal** (`== true`, `!= false`, etc.):
 
 ```
 Equality
@@ -504,7 +506,6 @@ Equality
   Comparison                    ← RHS (or LHS) containing the boolean literal
 ```
 
-XPath:
 ```xpath
 //Equality[
     EqualityOperator[T-EQEQ or T-EXCL_EQ]
@@ -520,9 +521,38 @@ this is exactly `"true"` or `"false"`. This prevents false positives from `x == 
 The rule will flag it; users with intentional nullable checks should suppress with
 `@Suppress("SimplifyBooleanExpressions")`.
 
+**Identity boolean conjunctions/disjunctions** (Kotlin-specific): `x && true`, `true && x`, `x || false`, `false || x`:
+
+```
+Conjunction          ← x && true / true && x
+  Equality           ← one operand
+  T-CONJ
+  Equality           ← other operand; nodeText = "true"
+
+Disjunction          ← x || false / false || x
+  Conjunction        ← one operand
+  T-DISJ
+  Conjunction        ← other operand; nodeText = "false"
+```
+
+`T-CONJ`/`T-DISJ` presence distinguishes real two-operand nodes from single-operand wrapper nodes
+(e.g. a lone `Conjunction` wrapping one `Equality`).
+
+```xpath
+(: x && true, true && x :)
+//Conjunction[T-CONJ and Equality[pmd-kotlin:nodeText() = 'true']]
+|
+(: x || false, false || x :)
+//Disjunction[T-DISJ and Conjunction[pmd-kotlin:nodeText() = 'false']]
+```
+
+`x && false` and `x || true` are intentionally excluded — they change semantics (absorbing element).
+
 ### 13.2 `SimplifyBooleanReturns`
 
-Matches `if/else` where both branches contain a single `return <boolean-literal>`:
+Matches `if/else` or `when` expressions where both branches yield a bare boolean literal.
+
+**Return form** (`return true`/`return false`):
 
 ```
 IfExpression
@@ -533,10 +563,25 @@ IfExpression
     Block or Statement containing JumpExpression[T-RETURN]
 ```
 
-Both forms (with and without braces) are covered. Block form is constrained to
+Both brace and braceless forms are covered. Block form is constrained to
 `Block[count(Statements/Statement) = 1]` to exclude multi-statement branches.
 `pmd-kotlin:nodeText()` on the `Expression` child of `JumpExpression` detects bare `true`/`false`,
 avoiding false positives for `return computedBoolean(true)`.
+
+**Expression/assignment form** (Kotlin-specific): `fun f() = if (cond) true else false`
+and `val x = if (cond) true else false`. Same `IfExpression` shape but branches contain a plain
+`Expression` (no `JumpExpression`) with `nodeText()` of `"true"` or `"false"`.
+
+**`when` form** (Kotlin-specific): `when { cond -> true; else -> false }`:
+
+```
+WhenExpression
+  WhenEntry[1]  ← condition branch (no T-ELSE): ControlStructureBody/Statement/Expression = "true"/"false"
+  WhenEntry[2]  ← else branch (T-ELSE):          ControlStructureBody/Statement/Expression = "true"/"false"
+```
+
+Constrained to exactly `count(WhenEntry) = 2` (one condition + one else). Multi-branch `when`
+and `when` with non-boolean branches are not flagged.
 
 ### 13.3 `CollapsibleIfStatements`
 
