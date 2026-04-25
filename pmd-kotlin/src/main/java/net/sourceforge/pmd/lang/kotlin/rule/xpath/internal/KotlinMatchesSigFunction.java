@@ -137,7 +137,7 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
             }
 
             for (CallSiteAst call : sites) {
-                boolean callSiteMatch = matchesCallSite(call, beginLine, beginCol, endCol,
+                boolean callSiteMatch = matchesCallSite(call, beginCol, endCol,
                         singleLine, suffixBeginLines);
                 boolean sigMatch = callSiteMatch && SignatureMatcherKt.matchesSigPolymorphic(call, sig, ctx::isSubtypeOf);
                 if (sigMatch) {
@@ -148,7 +148,7 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
         }
 
         private static boolean matchesCallSite(CallSiteAst call,
-                                               int beginLine, int beginCol, int endCol,
+                                               int beginCol, int endCol,
                                                boolean singleLine,
                                                @Nullable Set<Integer> suffixBeginLines) {
             if (singleLine) {

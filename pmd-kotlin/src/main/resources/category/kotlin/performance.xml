@@ -383,6 +383,125 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="InefficientEmptyStringCheck"
+          language="kotlin"
+          since="7.x"
+          message="String.trim().length / String.trim().isEmpty() is an inefficient way to check for a blank string; use isBlank() instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#inefficientemptystringcheck">
+        <description>
+Calling `str.trim()` (or `str.strip()`) before checking `.length` or `.isEmpty()` creates an
+unnecessary temporary `String` object just to discard it.
+
+Kotlin idiomatic alternatives:
+- `str.isBlank()` — equivalent to `str.trim().isEmpty()`, checks Unicode whitespace
+- `str.isEmpty()` — checks only for zero length, no trimming needed
+
+Kotlin equivalent of Java rule: category/java/performance.xml/InefficientEmptyStringCheck
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/InefficientEmptyStringCheck"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    (PostfixUnarySuffix/NavigationSuffix[@Identifier = 'length']
+     or PostfixUnarySuffix/NavigationSuffix[@Identifier = ('isEmpty', 'isNullOrEmpty')])
+    and .//PostfixUnarySuffix/NavigationSuffix[@Identifier = ('trim', 'strip')]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun isBlankStr(s: String): Boolean {
+        return s.trim().length == 0      // violation: allocates trimmed String
+    }
+
+    fun isBlankStr2(s: String): Boolean {
+        return s.strip().isEmpty()       // violation: allocates stripped String
+    }
+}
+
+class Good {
+    fun isBlankStr(s: String): Boolean {
+        return s.isBlank()               // ok: no allocation
+    }
+
+    fun isEmptyStr(s: String): Boolean {
+        return s.isEmpty()               // ok: no trimming needed for pure empty check
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="InefficientStringBuffering"
+          language="kotlin"
+          since="7.x"
+          message="Avoid concatenating non-literals in a StringBuilder.append() call; use chained append() calls instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#inefficientstringbuffering">
+        <description>
+Passing a `+` concatenation expression to `StringBuilder.append()` or `StringBuffer.append()`
+creates an intermediate `String` object unnecessarily. Use chained `append()` calls or
+Kotlin's `buildString { }` builder instead.
+
+Kotlin idiomatic alternatives:
+- Chain: `sb.append("prefix").append(variable)`
+- Builder: `buildString { append("prefix"); append(variable) }`
+
+Note: this rule requires kotlin-type-mapper pre-analysis to be available.
+See the pmd-kotlin documentation for setup instructions.
+
+Kotlin equivalent of Java rule: category/java/performance.xml/InefficientStringBuffering
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/InefficientStringBuffering"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PostfixUnaryExpression[
+    (pmd-kotlin:matchesSig('java.lang.StringBuilder#append(*)')
+     or pmd-kotlin:matchesSig('java.lang.StringBuffer#append(*)'))
+    and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[
+        .//AdditiveExpression[AdditiveOperator[T-ADD]]
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun buildMessage(prefix: String, value: Int): String {
+        val sb = StringBuilder()
+        sb.append(prefix + ": " + value)  // violation: intermediate String created
+        return sb.toString()
+    }
+}
+
+class GoodChain {
+    fun buildMessage(prefix: String, value: Int): String {
+        val sb = StringBuilder()
+        sb.append(prefix).append(": ").append(value)  // ok: chained appends
+        return sb.toString()
+    }
+}
+
+class GoodBuildString {
+    fun buildMessage(prefix: String, value: Int): String =
+        buildString {                          // ok: Kotlin idiomatic builder
+            append(prefix)
+            append(": ")
+            append(value)
+        }
+}
+        ]]></example>
+    </rule>
+
     <rule name="StringInstantiation"
           language="kotlin"
           since="7.x"
@@ -462,6 +581,52 @@ class Bad {
 class Good {
     fun good(name: String): String {
         return name // ok: use the String variable directly
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="TooFewBranchesForWhenExpression"
+          language="kotlin"
+          since="7.x"
+          message="A when expression with fewer than {0} branches can be replaced with a simpler if/else."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#toofewbranchesforwhenexpression">
+        <description>
+A `when` expression or statement with very few branches carries more syntax overhead than
+a plain `if`/`if-else`. Use `if` when only one or two outcomes are needed.
+
+Kotlin equivalent of Java rule: category/java/performance.xml/TooFewBranchesForASwitchStatement
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/TooFewBranchesForASwitchStatement"/>
+            <property name="minimumNumberCaseForAWhen" type="Integer"
+                      description="Minimum number of when-branches to justify using a when instead of if/else"
+                      value="3" min="2"/>
+            <property name="xpath">
+                <value><![CDATA[
+//WhenExpression[count(WhenEntry) < $minimumNumberCaseForAWhen]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: only 2 branches — use if/else instead
+fun describeSmall(x: Int): String {
+    return when (x) {
+        0    -> "zero"
+        else -> "non-zero"
+    }
+}
+
+// ok: 3 branches justify a when
+fun describeSign(x: Int): String {
+    return when {
+        x < 0  -> "negative"
+        x == 0 -> "zero"
+        else   -> "positive"
     }
 }
         ]]></example>
@@ -622,3 +787,4 @@ class Good {
     </rule>
 
 </ruleset>
+

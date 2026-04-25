@@ -146,7 +146,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
                 }
             }
             LOG.debug("kotlin-type-mapper aux classpath from string property ({} entries)", entries.size());
-            return entries;
+            return filterAuxClasspathEntries(entries, "aux-classpath property");
         }
         // 2. URLClassLoader hierarchy — PMD Designer (and CLI via ClasspathClassLoader) sets this.
         ClassLoader cl = jvmBundle.getAnalysisClassLoader();
@@ -167,7 +167,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
         }
         if (!urlEntries.isEmpty()) {
             LOG.debug("kotlin-type-mapper aux classpath from URLClassLoader hierarchy ({} entries)", urlEntries.size());
-            return urlEntries;
+            return filterAuxClasspathEntries(urlEntries, "analysis classloader");
         }
         // 3. java.class.path system property — Maven Surefire puts all test dependencies here.
         String javaClassPath = System.getProperty("java.class.path");
@@ -179,9 +179,21 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
                 }
             }
             LOG.debug("kotlin-type-mapper aux classpath from java.class.path ({} entries)", entries.size());
-            return entries;
+            return filterAuxClasspathEntries(entries, "java.class.path");
         }
         return new ArrayList<>();
+    }
+
+    private static List<File> filterAuxClasspathEntries(List<File> entries, String source) {
+        List<File> filtered = new ArrayList<>(entries.size());
+        for (File entry : entries) {
+            if (entry.exists() && (entry.isDirectory() || entry.getName().endsWith(".jar"))) {
+                filtered.add(entry);
+            } else {
+                LOG.warn("Skipping invalid Kotlin aux classpath entry from {}: {}", source, entry);
+            }
+        }
+        return filtered;
     }
 
     private static void deleteRecursively(File file) {
