@@ -111,5 +111,50 @@ fun check(bar: Int, x: Int): Boolean {
 }
         ]]></code>
     </test-code>
+    <test-code>
+        <description>expression body function returning true/false - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>1</expected-linenumbers>
+        <code><![CDATA[
+fun isEqual(bar: Int, x: Int): Boolean = if (bar == x) true else false
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>expression body function returning false/true - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>1</expected-linenumbers>
+        <code><![CDATA[
+fun isNotEqual(bar: Int, x: Int): Boolean = if (bar == x) false else true
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if-as-expression assigned to local variable - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun compute(bar: Int, x: Int): Boolean {
+    val result = if (bar == x) true else false
+    return result
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>expression body where one branch is non-literal - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(bar: Int, x: Int): Boolean = if (bar == x) bar > 0 else false
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>expression body with non-boolean expression - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun describe(bar: Int, x: Int): String = if (bar == x) "equal" else "not equal"
+        ]]></code>
+    </test-code>
 
 </test-data>

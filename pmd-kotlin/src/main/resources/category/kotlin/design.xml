@@ -119,22 +119,26 @@ class Bar {
     <rule name="SimplifyBooleanReturns"
           language="kotlin"
           since="7.x"
-          message="This if statement can be simplified to a boolean return"
+          message="This if/else expression can be simplified by using the condition directly"
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#simplifybooleanreturns">
         <description>
-            Avoid unnecessary `if`/`else` statements when returning a boolean literal from both
-            branches. The condition itself can be returned directly (or negated if needed).
+            Avoid unnecessary `if`/`else` when both branches yield a bare boolean literal.
+            The condition itself (or its negation) can be used directly in any context:
+            return, assignment, expression body, or function argument.
 
             ```kotlin
-            // violation:
-            if (bar == x) {
-                return true
-            } else {
-                return false
-            }
+            // violation — return form:
+            if (bar == x) return true else return false
             // simplify to:
             return bar == x
+
+            // violation — expression/assignment form (Kotlin-specific):
+            fun isEqual(bar: Int, x: Int) = if (bar == x) true else false
+            val result = if (bar == x) true else false
+            // simplify to:
+            fun isEqual(bar: Int, x: Int) = bar == x
+            val result = bar == x
             ```
 
             Kotlin equivalent of Java rule: category/java/design.xml/SimplifyBooleanReturns
@@ -146,6 +150,7 @@ class Bar {
                       value="category/java/design.xml/SimplifyBooleanReturns"/>
             <property name="xpath">
                 <value><![CDATA[
+(: Return form: if (cond) { return true } else { return false } :)
 //IfExpression[
     T-ELSE
     and (
@@ -165,21 +170,44 @@ class Bar {
         ]
     )
 ]
+|
+(: Expression form: fun f() = if (cond) true else false  /  val x = if (cond) true else false :)
+//IfExpression[
+    T-ELSE
+    and (
+        ControlStructureBody[1][not(Block)]/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        or ControlStructureBody[1]/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+    )
+    and (
+        ControlStructureBody[2][not(Block)]/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        or ControlStructureBody[2]/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+    )
+]
                 ]]></value>
             </property>
         </properties>
         <example><![CDATA[
 class Foo {
+    // violation — return form: replace with return bar == x
     fun isBarEqualTo(bar: Int, x: Int): Boolean {
-        if (bar == x) {      // violation: replace with: return bar == x
+        if (bar == x) {
             return true
         } else {
             return false
         }
     }
 
+    // violation — expression body: replace with fun isBarSame(bar: Int, x: Int) = bar == x
+    fun isBarSame(bar: Int, x: Int): Boolean = if (bar == x) true else false
+
+    // violation — assignment: replace with val result = bar == x
+    fun compute(bar: Int, x: Int): Boolean {
+        val result = if (bar == x) true else false
+        return result
+    }
+
     fun isBarGreaterThan(bar: Int, x: Int): Boolean {
-        return bar > x      // ok: already a direct boolean return
+        return bar > x      // ok: already a direct boolean expression
     }
 }
         ]]></example>

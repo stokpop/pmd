@@ -17,6 +17,15 @@ fun checkEquality(x: Int, y: Int): Boolean {
     }
 }
 
+// SimplifyBooleanReturns - expression body function
+fun isEqual(x: Int, y: Int): Boolean = if (x == y) true else false
+
+// SimplifyBooleanReturns - if as assigned expression
+fun compute(x: Int, y: Int): Boolean {
+    val result = if (x == y) true else false
+    return result
+}
+
 // CollapsibleIfStatements - with braces
 fun withBraces(x: Boolean, y: Boolean) {
     if (x) {
