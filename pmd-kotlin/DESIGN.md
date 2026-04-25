@@ -244,6 +244,20 @@ Returns `true` when the context node has a given annotation.
 Returns the set of modifier keywords on the context node
 (e.g. `'open'`, `'abstract'`, `'private'`).
 
+### 2.8 `pmd-kotlin:insideLoop()`
+
+Returns `true` when the context node is nested (at any depth) inside a
+`ForStatement`, `WhileStatement`, or `DoWhileStatement`.
+
+Replaces the verbose three-way ancestor check in every loop rule:
+```xpath
+// Before
+ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
+
+// After
+pmd-kotlin:insideLoop()
+```
+
 ---
 
 ## 3. Rule Authoring Patterns

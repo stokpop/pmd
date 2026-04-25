@@ -347,7 +347,7 @@ class Good {
             <property name="xpath">
                 <value><![CDATA[
 //PropertyDeclaration[
-    (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    pmd-kotlin:insideLoop()
     and Expression//PostfixUnaryExpression[
         pmd-kotlin:matchesSig('_#<init>(*)')
     ]
@@ -879,7 +879,7 @@ class Good {
                 <value><![CDATA[
 //Assignment[
     AssignmentAndOperator/T-ADD_ASSIGNMENT
-    and (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    and pmd-kotlin:insideLoop()
     and (
         let $lhsName := AssignableExpression//PrimaryExpression/@Identifier
         return ancestor::FunctionBody//PropertyDeclaration[
