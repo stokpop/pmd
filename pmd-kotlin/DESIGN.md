@@ -486,3 +486,35 @@ The rule uses structural detection (no type analysis needed):
 Both of the above are accepted rule behaviour — the developer should use `copyInto`
 or functional alternatives; suppress with `// NOPMD` where intentional.
 
+
+
+---
+
+## 12. Future Improvement Backlog
+
+Items deferred until more rules need them:
+
+### 12.1 Extend `typeIs()` to resolve Assignment LHS
+
+Currently `typeIs()` works on `PropertyDeclaration` and `PostfixUnaryExpression` nodes.
+When checking the type of an assignment target (e.g. `result += item`) the workaround
+is a `let $lhsName` expression that walks back to the declaration:
+
+```xpath
+let $lhsName := AssignableExpression//PrimaryExpression/@Identifier
+return ancestor::FunctionBody//PropertyDeclaration[
+    pmd-kotlin:typeIs('java.lang.String')
+    and VariableDeclaration/@Identifier = $lhsName
+]
+```
+
+Desired (not yet implemented):
+```xpath
+AssignableExpression[pmd-kotlin:typeIs('java.lang.String')]
+```
+
+Implementation: `typeIs()` would walk up from `AssignableExpression` to find the
+corresponding `PropertyDeclaration` and resolve its type.
+Java XPath rules do not have this either — Java class-based rules use the type API directly.
+
+**Defer until** a second rule needs the same `let $lhsName` workaround.
