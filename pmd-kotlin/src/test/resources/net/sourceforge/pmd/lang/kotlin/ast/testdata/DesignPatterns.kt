@@ -8,6 +8,12 @@ package net.sourceforge.pmd.lang.kotlin.ast.testdata
 val a = (someFlag == true)
 val b = (someFlag != false)
 
+// SimplifyBooleanExpressions - &&/|| with identity boolean literals
+val c = someFlag && true
+val d = someFlag || false
+val e = true && someFlag
+val f = false || someFlag
+
 // SimplifyBooleanReturns
 fun checkEquality(x: Int, y: Int): Boolean {
     if (x == y) {
@@ -23,6 +29,20 @@ fun isEqual(x: Int, y: Int): Boolean = if (x == y) true else false
 // SimplifyBooleanReturns - if as assigned expression
 fun compute(x: Int, y: Int): Boolean {
     val result = if (x == y) true else false
+    return result
+}
+
+// SimplifyBooleanReturns - when-expression returning boolean literals
+fun whenReturn(x: Int, y: Int): Boolean = when {
+    x == y -> true
+    else -> false
+}
+
+fun whenAssign(x: Int, y: Int): Boolean {
+    val result = when {
+        x == y -> true
+        else -> false
+    }
     return result
 }
 

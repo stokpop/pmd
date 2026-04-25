@@ -156,5 +156,60 @@ fun check(bar: Int, x: Int): Boolean = if (bar == x) bar > 0 else false
 fun describe(bar: Int, x: Int): String = if (bar == x) "equal" else "not equal"
         ]]></code>
     </test-code>
+    <test-code>
+        <description>when expression returning true/false in expression body - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>1</expected-linenumbers>
+        <code><![CDATA[
+fun isEqual(bar: Int, x: Int): Boolean = when { bar == x -> true; else -> false }
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>when expression returning false/true (negated) - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>1</expected-linenumbers>
+        <code><![CDATA[
+fun isNotEqual(bar: Int, x: Int): Boolean = when { bar == x -> false; else -> true }
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>when expression assigned to val - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun compute(bar: Int, x: Int): Boolean {
+    val result = when {
+        bar == x -> true
+        else -> false
+    }
+    return result
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>when with more than two entries - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun classify(bar: Int, x: Int): Boolean = when {
+    bar < x -> true
+    bar > x -> false
+    else -> true
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>when returning non-boolean literals - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun describe(bar: Int, x: Int): String = when {
+    bar == x -> "equal"
+    else -> "not equal"
+}
+        ]]></code>
+    </test-code>
 
 </test-data>

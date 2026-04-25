@@ -109,5 +109,68 @@ fun check(): Boolean {
 }
         ]]></code>
     </test-code>
+    <test-code>
+        <description>x &amp;&amp; true is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return x && true
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>true &amp;&amp; x is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return true && x
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>x || false is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return x || false
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>false || x is a violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return false || x
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>x &amp;&amp; false - no violation (not identity, changes semantics)</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return x && false
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>x || true - no violation (not identity, changes semantics)</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(x: Boolean): Boolean {
+    return x || true
+}
+        ]]></code>
+    </test-code>
 
 </test-data>

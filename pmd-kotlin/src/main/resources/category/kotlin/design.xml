@@ -95,10 +95,17 @@ class Foo {
                       value="category/java/design.xml/SimplifyBooleanExpressions"/>
             <property name="xpath">
                 <value><![CDATA[
+(: x == true, x != false, etc. :)
 //Equality[
     EqualityOperator[T-EQEQ or T-EXCL_EQ]
     and Comparison[pmd-kotlin:nodeText() = ('true', 'false')]
 ]
+|
+(: x && true, true && x :)
+//Conjunction[T-CONJ and Equality[pmd-kotlin:nodeText() = 'true']]
+|
+(: x || false, false || x :)
+//Disjunction[T-DISJ and Conjunction[pmd-kotlin:nodeText() = 'false']]
                 ]]></value>
             </property>
         </properties>
@@ -107,10 +114,12 @@ class Bar {
     val isFoo: Boolean = false
 
     fun check(): Boolean {
-        val a = (isFoo == true)   // violation: use isFoo directly
-        val b = (isFoo != false)  // violation: use isFoo directly
-        val c = isFoo             // ok
-        return a && b && c
+        val a = (isFoo == true)    // violation: use isFoo directly
+        val b = (isFoo != false)   // violation: use isFoo directly
+        val c = isFoo && true      // violation: use isFoo directly
+        val d = isFoo || false     // violation: use isFoo directly
+        val e = isFoo              // ok
+        return a && b && c && d && e
     }
 }
         ]]></example>
@@ -123,9 +132,9 @@ class Bar {
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#simplifybooleanreturns">
         <description>
-            Avoid unnecessary `if`/`else` when both branches yield a bare boolean literal.
-            The condition itself (or its negation) can be used directly in any context:
-            return, assignment, expression body, or function argument.
+            Avoid unnecessary `if`/`else` or `when` expressions when both branches yield a bare
+            boolean literal. The condition itself (or its negation) can be used directly in any
+            context: return, assignment, expression body, or function argument.
 
             ```kotlin
             // violation — return form:
@@ -138,6 +147,11 @@ class Bar {
             val result = if (bar == x) true else false
             // simplify to:
             fun isEqual(bar: Int, x: Int) = bar == x
+            val result = bar == x
+
+            // violation — when form (Kotlin-specific):
+            val result = when { bar == x -> true; else -> false }
+            // simplify to:
             val result = bar == x
             ```
 
@@ -183,6 +197,19 @@ class Bar {
         or ControlStructureBody[2]/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
     )
 ]
+|
+(: when form (Kotlin-specific): when { cond -> true; else -> false } :)
+//WhenExpression[
+    count(WhenEntry) = 2
+    and (
+        WhenEntry[not(T-ELSE)]/ControlStructureBody[not(Block)]/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        or WhenEntry[not(T-ELSE)]/ControlStructureBody/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+    )
+    and (
+        WhenEntry[T-ELSE]/ControlStructureBody[not(Block)]/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        or WhenEntry[T-ELSE]/ControlStructureBody/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+    )
+]
                 ]]></value>
             </property>
         </properties>
@@ -204,6 +231,12 @@ class Foo {
     fun compute(bar: Int, x: Int): Boolean {
         val result = if (bar == x) true else false
         return result
+    }
+
+    // violation — when form: replace with return bar == x
+    fun isBarSameWhen(bar: Int, x: Int): Boolean = when {
+        bar == x -> true
+        else -> false
     }
 
     fun isBarGreaterThan(bar: Int, x: Int): Boolean {
