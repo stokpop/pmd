@@ -190,10 +190,12 @@ synthetic attribute (provided by `KotlinInnerNode.getIdentifier()`).
 ### 2.1 `pmd-kotlin:typeIs(fqcn)`
 
 Returns `true` if the **type** of the context node is `fqcn` or a subtype.
-Applies to nodes carrying type annotation from the kotlin-type-mapper pre-analysis:
-- `PropertyDeclaration` — class-level property type
-- `CatchBlock` — exception type
-- `PostfixUnaryExpression` — expression type (limited coverage)
+See §9 for details on where and how type resolution works.
+
+Most reliable placements:
+- `PropertyDeclaration` — resolves the declared variable type
+- `CatchBlock` — resolves the caught exception type
+- `PostfixUnaryExpression` — resolves the return type of the call
 
 ### 2.2 `pmd-kotlin:typeIsExactly(fqcn)`
 
@@ -350,8 +352,123 @@ this was a source of false CPD positives.
 
 Returns the text of the first `KtSimpleIdentifier` direct child.
 Exposed as `@Identifier` attribute in XPath on any node that has a single leading
-`simpleIdentifier` child (e.g. `NavigationSuffix`, `FunctionDeclaration`).
+`simpleIdentifier` child (e.g. `NavigationSuffix`, `FunctionDeclaration`,
+`PrimaryExpression`, `VariableDeclaration`).
 
-Not all nodes expose `@Identifier`; fall back to
-`SimpleIdentifier/T-Identifier/@Text` for standalone `simpleIdentifier` children
-(e.g. the exception variable in `CatchBlock`, function names in `FunctionNameTooShort`).
+**Critical gotcha:** `@Identifier` works on the **parent** of a `SimpleIdentifier`,
+NOT on `SimpleIdentifier` itself. `SimpleIdentifier[@Identifier='foo']` always
+returns null because `SimpleIdentifier`'s own direct children are `T-Identifier`
+terminal tokens, not another `SimpleIdentifier`.
+
+| ✅ Correct | ❌ Wrong |
+|-----------|---------|
+| `PrimaryExpression[@Identifier='foo']` | `SimpleIdentifier[@Identifier='foo']` |
+| `VariableDeclaration/@Identifier` | `SimpleIdentifier/@Identifier` |
+| `NavigationSuffix[@Identifier='bar']` | `NavigationSuffix/SimpleIdentifier/@Identifier` |
+
+For standalone `simpleIdentifier` children, use `SimpleIdentifier/T-Identifier/@Text`
+instead.
+
+---
+
+## 8. Type Analysis in Unit Tests
+
+The Kotlin language processor's `launchAnalysis()` invokes the kotlin-type-mapper
+**before** rules are evaluated, even in `PmdRuleTst`-based unit tests. The test
+framework runs the full analysis pipeline on the CDATA snippet.
+
+Basic JVM types (`java.lang.String`, `java.lang.StringBuilder`, `java.util.*`, etc.)
+resolve without an explicit aux classpath because the Kotlin compiler includes the
+standard JDK classes automatically.
+
+**Consequence:** You can use `pmd-kotlin:typeIs(...)` and `pmd-kotlin:matchesSig(...)`
+in test cases without any extra configuration — they just work.  
+If type analysis were unavailable, the `UnresolvedType` rule would fire as a signal.
+
+---
+
+## 9. `pmd-kotlin:typeIs()` — Where It Works and How
+
+`typeIs(fqcn)` on a node resolves type in this order:
+1. **Node attribute** — checks a `TypeName` attribute if the node has one
+2. **Declarations** at `node.beginLine` — if the line has a `PropertyDeclaration`
+   or similar, its declared type is matched
+3. **Call-site return types** at `node.beginLine` — if no declarations, checks
+   the return type of call sites recorded at that line
+
+**Reliable placement:**
+- On `PropertyDeclaration` → resolves the declared variable type. This is the
+  most reliable pattern: `PropertyDeclaration[pmd-kotlin:typeIs('java.lang.String')]`
+- On `CatchBlock` → resolves the caught exception type
+- On `PostfixUnaryExpression` → resolves the return type of the call at that line
+
+**Connecting a variable declaration to its usage with `let`:**
+
+When a rule needs to link an `Assignment` LHS back to the type of the declared
+variable, use a `let` expression (supported by PMD's Saxon XPath engine):
+
+```xpath
+//Assignment[
+    AssignmentAndOperator/T-ADD_ASSIGNMENT
+    and (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    and (
+        let $lhsName := AssignableExpression//PrimaryExpression/@Identifier
+        return ancestor::FunctionBody//PropertyDeclaration[
+            pmd-kotlin:typeIs('java.lang.String')
+            and VariableDeclaration/@Identifier = $lhsName
+        ]
+    )
+]
+```
+
+`let $var := expr return ...` is valid XPath 2.0 inside predicates.
+Existing Java PMD rules use this pattern (e.g. `LabeledStatement` in bestpractices).
+
+---
+
+## 10. Constructor Detection with `matchesSig`
+
+To detect **any** constructor call on a `PostfixUnaryExpression`:
+```xpath
+pmd-kotlin:matchesSig('_#<init>(*)')
+```
+- `_` — wildcard matching any receiver type
+- `<init>` — matches constructor calls
+- `*` — wildcard matching any parameter list
+
+This is preferred over the heuristic `PrimaryExpression[matches(@Identifier, '^[A-Z]')]`
+(capital letter naming convention) because:
+- The heuristic falsely fires on top-level functions like `Regex(...)` that are
+  actually factory functions and NOT constructors in some contexts
+- `matchesSig` uses actual resolved type information
+
+Note: `matchesSig` only works on `PostfixUnaryExpression` nodes; it returns `false`
+on all other node types.
+
+---
+
+## 11. `AvoidArrayLoops` Rule Notes
+
+The rule uses structural detection (no type analysis needed):
+```xpath
+//ForStatement[
+    not(.//ForStatement) and not(.//WhileStatement) and not(.//DoWhileStatement)
+    and count(.//Assignment) = 1
+]//Assignment[
+    DirectlyAssignableExpression/AssignableSuffix/IndexingSuffix
+    and Expression//PostfixUnarySuffix/IndexingSuffix
+]
+```
+
+**Known behaviour:**
+- `not(.//ForStatement)` correctly ignores outer loops when nested — only the
+  innermost simple loop is checked
+- Transform patterns (`dst[i] = src[i] * 2`) ARE flagged: the RHS still contains
+  `PostfixUnarySuffix/IndexingSuffix` for `src[i]`
+- 2D array copy inner loops ARE flagged: `dst[i][j] = matrix[i][j]` matches because
+  `DirectlyAssignableExpression/AssignableSuffix/IndexingSuffix` matches the second
+  index `[j]`
+
+Both of the above are accepted rule behaviour — the developer should use `copyInto`
+or functional alternatives; suppress with `// NOPMD` where intentional.
+

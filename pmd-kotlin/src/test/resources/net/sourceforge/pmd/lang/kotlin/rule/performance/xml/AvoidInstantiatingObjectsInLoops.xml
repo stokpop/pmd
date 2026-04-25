@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test-data
+        xmlns="http://pmd.sourceforge.net/rule-tests"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
+
+    <test-code>
+        <description>new object in for loop — violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>4</expected-linenumbers>
+        <code><![CDATA[
+fun bad(items: List<String>): List<String> {
+    val result = mutableListOf<String>()
+    for (item in items) {
+        val sb = StringBuilder()
+        sb.append(item)
+        result.add(sb.toString())
+    }
+    return result
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>two new objects in for loop — two violations</description>
+        <expected-problems>2</expected-problems>
+        <expected-linenumbers>3,4</expected-linenumbers>
+        <code><![CDATA[
+fun bad(items: List<String>) {
+    for (item in items) {
+        val sb = StringBuilder()
+        val list = ArrayList<Int>()
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>new object in while loop — violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>4</expected-linenumbers>
+        <code><![CDATA[
+fun bad(n: Int) {
+    var i = 0
+    while (i < n) {
+        val sb = StringBuilder()
+        i++
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>new object in do-while loop — violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>3</expected-linenumbers>
+        <code><![CDATA[
+fun bad(n: Int) {
+    do {
+        val obj = StringBuilder()
+    } while (false)
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>object declared outside loop — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun good(items: List<String>): List<String> {
+    val result = mutableListOf<String>()
+    val sb = StringBuilder()
+    for (item in items) {
+        sb.setLength(0)
+        sb.append(item)
+        result.add(sb.toString())
+    }
+    return result
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>lowercase function call inside loop — no violation (not a constructor)</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun good(items: List<String>) {
+    for (item in items) {
+        val n = item.length
+        val s = item.lowercase()
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>object used to build the result from loop variable — inherently loop-dependent — still flagged</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>4</expected-linenumbers>
+        <code><![CDATA[
+fun bad(pairs: List<Pair<String, Int>>): List<String> {
+    val result = mutableListOf<String>()
+    for ((key, value) in pairs) {
+        val entry = Pair(key, value)
+        result.add(entry.toString())
+    }
+    return result
+}
+        ]]></code>
+    </test-code>
+
+</test-data>

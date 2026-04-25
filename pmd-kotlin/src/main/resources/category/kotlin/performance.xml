@@ -107,6 +107,63 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="AvoidArrayLoops"
+          language="kotlin"
+          since="7.x"
+          message="Use copyInto() or copyOf() instead of manually copying array elements in a loop."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#avoidarrayloops">
+        <description>
+            Manually copying array elements one by one in a loop is less efficient and less clear
+            than using the built-in `copyInto()` or `copyOf()` functions. The built-in functions
+            are implemented natively and avoid the overhead of interpreted looping.
+
+            Prefer:
+            - `src.copyInto(dst)` for a full copy into an existing array
+            - `src.copyOf()` or `src.copyOf(n)` to produce a new copy
+            - `src.copyOfRange(from, to)` for a partial copy
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/AvoidArrayLoops
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/AvoidArrayLoops"/>
+            <property name="xpath">
+                <value><![CDATA[
+//ForStatement[
+    not(.//ForStatement)
+    and not(.//WhileStatement)
+    and not(.//DoWhileStatement)
+    and count(.//Assignment) = 1
+]//Assignment[
+    DirectlyAssignableExpression/AssignableSuffix/IndexingSuffix
+    and Expression//PostfixUnarySuffix/IndexingSuffix
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun copy(src: IntArray, dst: IntArray) {
+        for (i in src.indices) {
+            dst[i] = src[i]   // violation: use src.copyInto(dst)
+        }
+    }
+}
+
+class Good {
+    fun copy(src: IntArray, dst: IntArray) {
+        src.copyInto(dst)     // ok: built-in efficient copy
+    }
+    fun copyPartial(src: IntArray): IntArray {
+        return src.copyOf()   // ok: returns a new copy
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="AvoidCalendarDateCreation"
           language="kotlin"
           since="7.x"
@@ -264,6 +321,63 @@ class Good {
 
     fun readNio(file: File): ByteArray {
         return Files.newInputStream(file.toPath()).use { it.readBytes() } // ok: NIO approach
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="AvoidInstantiatingObjectsInLoops"
+          language="kotlin"
+          since="7.x"
+          message="Avoid creating new objects inside loops — consider moving the instantiation outside the loop."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#avoidinstantiatingobjectsinloops">
+        <description>
+            Creating objects inside a loop may cause unnecessary garbage collection pressure when
+            the same instance could be constructed once outside the loop and reused. If the object
+            can be safely shared or reset across iterations, move its construction before the loop.
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/AvoidInstantiatingObjectsInLoops
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/AvoidInstantiatingObjectsInLoops"/>
+            <property name="xpath">
+                <value><![CDATA[
+//PropertyDeclaration[
+    (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    and Expression//PostfixUnaryExpression[
+        pmd-kotlin:matchesSig('_#<init>(*)')
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun process(items: List<String>): List<String> {
+        val result = mutableListOf<String>()
+        for (item in items) {
+            val sb = StringBuilder()   // violation: new StringBuilder per iteration
+            sb.append(item)
+            result.add(sb.toString())
+        }
+        return result
+    }
+}
+
+class Good {
+    fun process(items: List<String>): List<String> {
+        val result = mutableListOf<String>()
+        val sb = StringBuilder()       // ok: single instance, cleared per iteration
+        for (item in items) {
+            sb.setLength(0)
+            sb.append(item)
+            result.add(sb.toString())
+        }
+        return result
     }
 }
         ]]></example>
@@ -733,6 +847,72 @@ class Good {
 
     fun convert2(i: Int): String {
         return i.toString()  // ok: explicit toString()
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="UseStringBuilderForStringAppends"
+          language="kotlin"
+          since="7.x"
+          message="Use a StringBuilder instead of concatenating strings with += inside a loop."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#usestringbuilderforstringappends">
+        <description>
+            Each use of `+=` to concatenate a String inside a loop creates a hidden temporary
+            StringBuilder, a backing char[] array, and a new String object per iteration. These
+            temporaries must all be garbage collected. Using an explicit StringBuilder outside
+            the loop and calling `append()` avoids these repeated allocations.
+
+            Note: this rule requires kotlin-type-mapper pre-analysis to resolve the type of the
+            concatenation target. If type analysis is unavailable, an `UnresolvedType` finding
+            is emitted instead.
+
+            Kotlin equivalent of Java rule: category/java/performance.xml/UseStringBufferForStringAppends
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/performance.xml/UseStringBufferForStringAppends"/>
+            <property name="xpath">
+                <value><![CDATA[
+//Assignment[
+    AssignmentAndOperator/T-ADD_ASSIGNMENT
+    and (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    and (
+        let $lhsName := AssignableExpression//PrimaryExpression/@Identifier
+        return ancestor::FunctionBody//PropertyDeclaration[
+            pmd-kotlin:typeIs('java.lang.String')
+            and VariableDeclaration/@Identifier = $lhsName
+        ]
+    )
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bad {
+    fun join(items: List<String>): String {
+        var result = ""
+        for (item in items) {
+            result += item       // violation: creates a new StringBuilder per iteration
+        }
+        return result
+    }
+}
+
+class Good {
+    fun join(items: List<String>): String {
+        val sb = StringBuilder()
+        for (item in items) {
+            sb.append(item)      // ok: single StringBuilder, append per iteration
+        }
+        return sb.toString()
+    }
+
+    fun joinKotlin(items: List<String>): String {
+        return items.joinToString("")  // ok: idiomatic Kotlin
     }
 }
         ]]></example>
