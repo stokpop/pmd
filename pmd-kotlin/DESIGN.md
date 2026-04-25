@@ -490,6 +490,78 @@ or functional alternatives; suppress with `// NOPMD` where intentional.
 
 ---
 
+## 13. Design Rules — Boolean and If Patterns
+
+### 13.1 `SimplifyBooleanExpressions`
+
+Matches equality comparisons where one operand is a bare boolean literal:
+
+```
+Equality
+  Comparison                    ← LHS (some expression)
+  EqualityOperator
+    T-EQEQ  (or T-EXCL_EQ)     ← == or !=  (not === which is T-EQEQEQ)
+  Comparison                    ← RHS (or LHS) containing the boolean literal
+```
+
+XPath:
+```xpath
+//Equality[
+    EqualityOperator[T-EQEQ or T-EXCL_EQ]
+    and Comparison[pmd-kotlin:nodeText() = ('true', 'false')]
+]
+```
+
+`pmd-kotlin:nodeText()` on `Comparison` returns the exact source text; for a bare `true` or `false`
+this is exactly `"true"` or `"false"`. This prevents false positives from `x == foo(true)` where
+`true` is a nested function argument.
+
+**Nullable Boolean gotcha:** `x == true` is valid idiomatic Kotlin when `x: Boolean?` (safe null-check).
+The rule will flag it; users with intentional nullable checks should suppress with
+`@Suppress("SimplifyBooleanExpressions")`.
+
+### 13.2 `SimplifyBooleanReturns`
+
+Matches `if/else` where both branches contain a single `return <boolean-literal>`:
+
+```
+IfExpression
+  ControlStructureBody [1st — then]
+    Block or Statement containing JumpExpression[T-RETURN]
+  T-ELSE
+  ControlStructureBody [2nd — else]
+    Block or Statement containing JumpExpression[T-RETURN]
+```
+
+Both forms (with and without braces) are covered. Block form is constrained to
+`Block[count(Statements/Statement) = 1]` to exclude multi-statement branches.
+`pmd-kotlin:nodeText()` on the `Expression` child of `JumpExpression` detects bare `true`/`false`,
+avoiding false positives for `return computedBoolean(true)`.
+
+### 13.3 `CollapsibleIfStatements`
+
+Matches a top-level `if` (no else) whose single body statement is another `if` (no else):
+
+```
+IfExpression[not(T-ELSE)]
+  ControlStructureBody
+    Block (optional, single statement)
+    Statement
+      Expression
+        ...
+        PrimaryExpression
+          IfExpression[not(T-ELSE)]   ← violation reported here (inner if)
+```
+
+The path `Statement/Expression//PrimaryExpression/IfExpression` selects expression-statement ifs,
+distinguishing them from declaration contexts (`Statement/Declaration/PropertyDeclaration/...`).
+`not(ancestor::CallSuffix)` prevents false positives for `if (a) someCall(if (b) foo())`.
+
+Both braces and no-braces forms are handled via a union XPath. The violation is reported
+at the **inner** `IfExpression` node.
+
+---
+
 ## 12. Future Improvement Backlog
 
 Items deferred until more rules need them:

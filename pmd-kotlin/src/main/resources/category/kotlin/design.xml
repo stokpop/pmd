@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ruleset name="Design"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+Rules that help you discover design issues.
+    </description>
+
+    <rule name="CollapsibleIfStatements"
+          language="kotlin"
+          since="7.x"
+          message="This if statement could be combined with its parent using &amp;&amp;"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#collapsibleifstatements">
+        <description>
+            Reports nested `if` statements that can be merged together by joining their
+            conditions with a boolean `&amp;&amp;` operator.
+
+            Only flags the inner `if` when it is the sole statement of the outer `if`'s body
+            and neither has an `else` branch. For example:
+
+            ```kotlin
+            if (x) {
+                if (y) { … }     // violation: merge to: if (x &amp;&amp; y) { … }
+            }
+            ```
+
+            Kotlin equivalent of Java rule: category/java/design.xml/CollapsibleIfStatements
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/design.xml/CollapsibleIfStatements"/>
+            <property name="xpath">
+                <value><![CDATA[
+(: No-braces outer body: if (a) if (b) { ... } :)
+//IfExpression[not(T-ELSE)]
+    /ControlStructureBody[not(Block)]
+    /Statement/Expression//PrimaryExpression
+    /IfExpression[not(T-ELSE) and not(ancestor::CallSuffix)]
+|
+(: Braces outer body with a single inner statement :)
+//IfExpression[not(T-ELSE)]
+    /ControlStructureBody/Block[count(Statements/Statement) = 1]
+    /Statements/Statement/Expression//PrimaryExpression
+    /IfExpression[not(T-ELSE) and not(ancestor::CallSuffix)]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Foo {
+    fun bar(x: Boolean, y: Boolean) {
+        if (x) {            // violation: can be merged
+            if (y) {
+                println("both")
+            }
+        }
+        if (x) {            // ok: outer has else
+            if (y) { println("both") }
+        } else {
+            println("neither")
+        }
+        if (x && y) {       // ok: already merged
+            println("both")
+        }
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="SimplifyBooleanExpressions"
+          language="kotlin"
+          since="7.x"
+          message="Avoid unnecessary comparisons in boolean expressions"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#simplifybooleanexpressions">
+        <description>
+            Avoid unnecessary comparisons with boolean literals (`true` or `false`).
+            These serve no purpose and reduce readability.
+
+            Note: in Kotlin, `x == true` is idiomatic when `x` is `Boolean?` (nullable), as it
+            safely handles the `null` case. If this pattern is intentional for a nullable boolean,
+            suppress this violation with `@Suppress("SimplifyBooleanExpressions")`.
+
+            Kotlin equivalent of Java rule: category/java/design.xml/SimplifyBooleanExpressions
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/design.xml/SimplifyBooleanExpressions"/>
+            <property name="xpath">
+                <value><![CDATA[
+//Equality[
+    EqualityOperator[T-EQEQ or T-EXCL_EQ]
+    and Comparison[pmd-kotlin:nodeText() = ('true', 'false')]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Bar {
+    val isFoo: Boolean = false
+
+    fun check(): Boolean {
+        val a = (isFoo == true)   // violation: use isFoo directly
+        val b = (isFoo != false)  // violation: use isFoo directly
+        val c = isFoo             // ok
+        return a && b && c
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="SimplifyBooleanReturns"
+          language="kotlin"
+          since="7.x"
+          message="This if statement can be simplified to a boolean return"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#simplifybooleanreturns">
+        <description>
+            Avoid unnecessary `if`/`else` statements when returning a boolean literal from both
+            branches. The condition itself can be returned directly (or negated if needed).
+
+            ```kotlin
+            // violation:
+            if (bar == x) {
+                return true
+            } else {
+                return false
+            }
+            // simplify to:
+            return bar == x
+            ```
+
+            Kotlin equivalent of Java rule: category/java/design.xml/SimplifyBooleanReturns
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="javaEquivalentRule" type="String"
+                      description="Java rule this Kotlin rule is based on; update this rule when the Java rule changes."
+                      value="category/java/design.xml/SimplifyBooleanReturns"/>
+            <property name="xpath">
+                <value><![CDATA[
+//IfExpression[
+    T-ELSE
+    and (
+        ControlStructureBody[1][not(Block)]/Statement//JumpExpression[
+            T-RETURN and Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        ]
+        or ControlStructureBody[1]/Block[count(Statements/Statement) = 1]//JumpExpression[
+            T-RETURN and Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        ]
+    )
+    and (
+        ControlStructureBody[2][not(Block)]/Statement//JumpExpression[
+            T-RETURN and Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        ]
+        or ControlStructureBody[2]/Block[count(Statements/Statement) = 1]//JumpExpression[
+            T-RETURN and Expression[pmd-kotlin:nodeText() = ('true', 'false')]
+        ]
+    )
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+class Foo {
+    fun isBarEqualTo(bar: Int, x: Int): Boolean {
+        if (bar == x) {      // violation: replace with: return bar == x
+            return true
+        } else {
+            return false
+        }
+    }
+
+    fun isBarGreaterThan(bar: Int, x: Int): Boolean {
+        return bar > x      // ok: already a direct boolean return
+    }
+}
+        ]]></example>
+    </rule>
+
+</ruleset>

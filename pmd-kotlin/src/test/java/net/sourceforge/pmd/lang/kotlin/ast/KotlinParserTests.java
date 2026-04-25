@@ -16,5 +16,9 @@ class KotlinParserTests extends BaseKotlinTreeDumpTest {
         doTest("Simple");
     }
 
+    @Test
+    void testDesignPatterns() {
+        doTest("DesignPatterns");
+    }
 
 }

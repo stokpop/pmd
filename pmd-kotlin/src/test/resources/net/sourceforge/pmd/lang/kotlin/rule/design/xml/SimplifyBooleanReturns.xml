@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<test-data
+    xmlns="http://pmd.sourceforge.net/rule-tests"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
+
+    <test-code>
+        <description>if/else returning true/false with braces - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun isBarEqualTo(bar: Int, x: Int): Boolean {
+    if (bar == x) {
+        return true
+    } else {
+        return false
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if/else returning false/true with braces - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun isBarNotEqualTo(bar: Int, x: Int): Boolean {
+    if (bar == x) {
+        return false
+    } else {
+        return true
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if/else returning true/false without braces - violation</description>
+        <expected-problems>1</expected-problems>
+        <expected-linenumbers>2</expected-linenumbers>
+        <code><![CDATA[
+fun isBarEqualTo(bar: Int, x: Int): Boolean {
+    if (bar == x) return true
+    else return false
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>direct boolean return - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun isBarEqualTo(bar: Int, x: Int): Boolean {
+    return bar == x
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if/else returning a non-boolean value - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun describe(bar: Int, x: Int): String {
+    if (bar == x) {
+        return "equal"
+    } else {
+        return "not equal"
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if without else - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(bar: Int, x: Int): Boolean {
+    if (bar == x) {
+        return true
+    }
+    return false
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if/else branch with multiple statements - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(bar: Int, x: Int): Boolean {
+    if (bar == x) {
+        println("equal")
+        return true
+    } else {
+        return false
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>if/else returning computed boolean - no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun check(bar: Int, x: Int): Boolean {
+    if (bar == x) {
+        return bar > 0
+    } else {
+        return false
+    }
+}
+        ]]></code>
+    </test-code>
+
+</test-data>
