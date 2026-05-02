@@ -494,34 +494,14 @@ or functional alternatives; suppress with `// NOPMD` where intentional.
 
 ### 13.1 `SimplifyBooleanExpressions`
 
-Matches two kinds of redundant boolean expressions:
+Flags redundant boolean identity expressions using `&&` or `||` with a literal:
+`x && true`, `true && x`, `x || false`, `false || x`.
 
-**Equality comparisons with a boolean literal** (`== true`, `!= false`, etc.):
+**Note:** `x == true`, `x != true`, `x == false`, `x != false` are intentionally **not** flagged.
+In Kotlin these are idiomatic for nullable `Boolean?` values (safe null-aware checks) and
+produce too many false positives to be useful.
 
-```
-Equality
-  Comparison                    ← LHS (some expression)
-  EqualityOperator
-    T-EQEQ  (or T-EXCL_EQ)     ← == or !=  (not === which is T-EQEQEQ)
-  Comparison                    ← RHS (or LHS) containing the boolean literal
-```
-
-```xpath
-//Equality[
-    EqualityOperator[T-EQEQ or T-EXCL_EQ]
-    and Comparison[pmd-kotlin:nodeText() = ('true', 'false')]
-]
-```
-
-`pmd-kotlin:nodeText()` on `Comparison` returns the exact source text; for a bare `true` or `false`
-this is exactly `"true"` or `"false"`. This prevents false positives from `x == foo(true)` where
-`true` is a nested function argument.
-
-**Nullable Boolean gotcha:** `x == true` is valid idiomatic Kotlin when `x: Boolean?` (safe null-check).
-The rule will flag it; users with intentional nullable checks should suppress with
-`@Suppress("SimplifyBooleanExpressions")`.
-
-**Identity boolean conjunctions/disjunctions** (Kotlin-specific): `x && true`, `true && x`, `x || false`, `false || x`:
+**Identity boolean conjunctions/disjunctions** (Kotlin-specific):
 
 ```
 Conjunction          ← x && true / true && x
@@ -635,3 +615,19 @@ corresponding `PropertyDeclaration` and resolve its type.
 Java XPath rules do not have this either — Java class-based rules use the type API directly.
 
 **Defer until** a second rule needs the same `let $lhsName` workaround.
+
+### 12.2 Implement `KotlinAnnotationSuppressor`
+
+PMD currently has **no annotation suppressor for Kotlin**. This means Kotlin's `@Suppress("PMD.RuleName")`
+annotation is silently ignored. The only suppression mechanism that works is the comment-based
+`// NOPMD` marker on the offending line.
+
+Java's suppression is implemented in `JavaAnnotationSuppressor` (extends `AbstractAnnotationSuppressor`),
+registered via `JavaLanguageProcessor`. A Kotlin equivalent would:
+
+1. Extend `AbstractAnnotationSuppressor<KotlinNode>` (or the appropriate Kotlin AST annotation node)
+2. Walk the `@Suppress(...)` annotation arguments and match against `"PMD"` / `"PMD.RuleName"`
+3. Register the suppressor via `KotlinLanguageProcessor`
+
+Until this is implemented, all rule descriptions and docs must direct users to use `// NOPMD` instead
+of `@Suppress(...)`.

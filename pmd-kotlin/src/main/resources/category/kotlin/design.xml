@@ -79,12 +79,11 @@ class Foo {
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_design.html#simplifybooleanexpressions">
         <description>
-            Avoid unnecessary comparisons with boolean literals (`true` or `false`).
-            These serve no purpose and reduce readability.
+            Avoid redundant boolean identity expressions using `&amp;&amp;` or `||` with a literal:
+            `x &amp;&amp; true` and `x || false` are no-ops and can be simplified to just `x`.
 
-            Note: in Kotlin, `x == true` is idiomatic when `x` is `Boolean?` (nullable), as it
-            safely handles the `null` case. If this pattern is intentional for a nullable boolean,
-            suppress this violation with `@Suppress("SimplifyBooleanExpressions")`.
+            Note: `x == true` and similar equality comparisons are intentionally not flagged —
+            in Kotlin these are idiomatic for nullable `Boolean?` values.
 
             Kotlin equivalent of Java rule: category/java/design.xml/SimplifyBooleanExpressions
         </description>
@@ -95,12 +94,6 @@ class Foo {
                       value="category/java/design.xml/SimplifyBooleanExpressions"/>
             <property name="xpath">
                 <value><![CDATA[
-(: x == true, x != false, etc. :)
-//Equality[
-    EqualityOperator[T-EQEQ or T-EXCL_EQ]
-    and Comparison[pmd-kotlin:nodeText() = ('true', 'false')]
-]
-|
 (: x && true, true && x :)
 //Conjunction[T-CONJ and Equality[pmd-kotlin:nodeText() = 'true']]
 |
@@ -114,12 +107,11 @@ class Bar {
     val isFoo: Boolean = false
 
     fun check(): Boolean {
-        val a = (isFoo == true)    // violation: use isFoo directly
-        val b = (isFoo != false)   // violation: use isFoo directly
-        val c = isFoo && true      // violation: use isFoo directly
-        val d = isFoo || false     // violation: use isFoo directly
-        val e = isFoo              // ok
-        return a && b && c && d && e
+        val a = isFoo && true      // violation: use isFoo directly
+        val b = isFoo || false     // violation: use isFoo directly
+        val c = isFoo              // ok
+        val d = isFoo == true      // ok: idiomatic nullable Boolean check
+        return a && b && c && d
     }
 }
         ]]></example>
