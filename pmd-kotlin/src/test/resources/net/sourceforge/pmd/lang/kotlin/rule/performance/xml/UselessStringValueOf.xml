@@ -11,7 +11,7 @@
         <code><![CDATA[
 class Bad {
     fun convert(i: Int): String {
-        return String.valueOf(i)
+        return java.lang.String.valueOf(i)
     }
 }
         ]]></code>

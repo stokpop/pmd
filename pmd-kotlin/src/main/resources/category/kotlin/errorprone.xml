@@ -376,7 +376,9 @@ class MyCheckedException : Exception("checked equivalent")
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    PostfixUnarySuffix/NavigationSuffix[@Identifier='exit' or @Identifier='halt']
+    pmd-kotlin:matchesSig('java.lang.System#exit(*)')
+    or pmd-kotlin:matchesSig('java.lang.Runtime#exit(*)')
+    or pmd-kotlin:matchesSig('java.lang.Runtime#halt(*)')
 ]
                 ]]></value>
             </property>
@@ -603,8 +605,10 @@ This avoids creating a temporary String object.
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    (PostfixUnarySuffix/NavigationSuffix[@Identifier='toLowerCase']
-     or PostfixUnarySuffix/NavigationSuffix[@Identifier='toUpperCase'])
+    (
+        pmd-kotlin:matchesSig('java.lang.String#toLowerCase()')
+        or pmd-kotlin:matchesSig('java.lang.String#toUpperCase()')
+    )
     and PostfixUnarySuffix/NavigationSuffix[@Identifier='equals']
 ]
                 ]]></value>

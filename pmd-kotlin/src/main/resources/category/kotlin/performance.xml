@@ -464,7 +464,11 @@ be combined into a single `append()` call, reducing method call overhead.
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    count(PostfixUnarySuffix[
+    (
+        pmd-kotlin:matchesSig('java.lang.StringBuilder#append(java.lang.String)')
+        or pmd-kotlin:matchesSig('java.lang.StringBuffer#append(java.lang.String)')
+    )
+    and count(PostfixUnarySuffix[
         NavigationSuffix[@Identifier='append']
         and following-sibling::PostfixUnarySuffix[1]/CallSuffix/ValueArguments/ValueArgument[
             starts-with(pmd-kotlin:nodeText(), '"')
@@ -521,9 +525,14 @@ Kotlin equivalent of Java rule: category/java/performance.xml/InefficientEmptySt
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    (PostfixUnarySuffix/NavigationSuffix[@Identifier = 'length']
-     or PostfixUnarySuffix/NavigationSuffix[@Identifier = ('isEmpty', 'isNullOrEmpty')])
-    and .//PostfixUnarySuffix/NavigationSuffix[@Identifier = ('trim', 'strip')]
+    (
+        pmd-kotlin:matchesSig('java.lang.String#trim()')
+        or pmd-kotlin:matchesSig('java.lang.String#strip()')
+    )
+    and (
+        PostfixUnarySuffix/NavigationSuffix[@Identifier = 'length']
+        or PostfixUnarySuffix/NavigationSuffix[@Identifier = ('isEmpty', 'isNullOrEmpty')]
+    )
 ]
                 ]]></value>
             </property>
@@ -678,10 +687,7 @@ class Good {
                       value="category/java/performance.xml/StringToString"/>
             <property name="xpath">
                 <value><![CDATA[
-//PostfixUnaryExpression[
-    pmd-kotlin:matchesSig('java.lang.String#toString()')
-    and ./PostfixUnarySuffix/NavigationSuffix[@Identifier='toString']
-]
+//PostfixUnaryExpression[pmd-kotlin:matchesSig('java.lang.String#toString()')]
                 ]]></value>
             </property>
         </properties>
@@ -827,7 +833,7 @@ unnecessary overhead.
             <property name="xpath">
                 <value><![CDATA[
 //PostfixUnaryExpression[
-    starts-with(pmd-kotlin:nodeText(), 'String.')
+    pmd-kotlin:matchesSig('java.lang.String#valueOf(*)')
     and PostfixUnarySuffix/NavigationSuffix[@Identifier='valueOf']
 ]
                 ]]></value>

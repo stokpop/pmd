@@ -256,6 +256,30 @@ matching the signature. Signature format: `receiverType#methodName(paramType,...
 The outer node (`sb.toString().length`) has `toString()` as a call site in its range
 AND has `.length` as a direct `NavigationSuffix`.
 
+**Avoiding doubled violations — the structural anchor pattern:**
+
+Because `matchesSig` matches any `PostfixUnaryExpression` whose column range contains
+the target call site, AND because `a.method()` produces **two** nested PUE nodes — one
+for `a.method` (navigation only) and one for `a.method()` (navigation + call) — a bare
+`matchesSig` predicate will fire **twice** on the same method call.
+
+To fire exactly once, combine `matchesSig` with a direct `@Identifier` structural anchor:
+
+```xpath
+//PostfixUnaryExpression[
+    pmd-kotlin:matchesSig('java.lang.String#valueOf(*)')
+    and PostfixUnarySuffix/NavigationSuffix[@Identifier='valueOf']
+]
+```
+
+This anchors to the inner `a.valueOf` PUE (which has the NavigationSuffix as a direct
+child) and excludes the outer `a.valueOf(i)` PUE (which has a CallSuffix as the direct
+child, not a NavigationSuffix).
+
+**Key rule: always pair `matchesSig` with a `NavigationSuffix[@Identifier='method']`
+structural anchor.** This `@Identifier` check is NOT a type-fallback — it is a necessary
+locator that selects the correct PUE level. Never remove it when refactoring rules.
+
 ### 2.4 `pmd-kotlin:matchesSig` — wildcards
 
 - `_` — wildcard for a single type (receiver or parameter)
@@ -493,6 +517,23 @@ For type resolution to work in a test case CDATA snippet:
 4. **Always prefer typed checks** (`matchesSig`, `typeIs`) over AST-shape checks.
    Type info is always expected to be present in production (the `UnresolvedType` rule
    must be resolved first); no AST-only fallback is needed.
+
+5. **Java static methods on Kotlin-mapped types require fully-qualified names.**
+   `kotlin.String` has no companion `valueOf`, so `String.valueOf(i)` does not produce
+   a call site in kotlin-type-mapper and `matchesSig` will return false.  
+   Use the fully-qualified `java.lang.String.valueOf(i)` instead — the K1 compiler
+   resolves this as a Java interop static call and a call site IS generated.
+
+   ```kotlin
+   // Wrong — String maps to kotlin.String; no valueOf companion → no call site
+   return String.valueOf(i)
+
+   // Correct — java.lang.String resolves via Java interop → call site generated
+   return java.lang.String.valueOf(i)
+   ```
+
+   This also applies to other methods whose Kotlin-mapped name differs from the Java name.
+
 
 ---
 
