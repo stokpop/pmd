@@ -193,6 +193,7 @@ class Bar {
 (: when form (Kotlin-specific): when { cond -> true; else -> false } :)
 //WhenExpression[
     count(WhenEntry) = 2
+    and WhenEntry[not(T-ELSE)][count(WhenCondition) = 1]
     and (
         WhenEntry[not(T-ELSE)]/ControlStructureBody[not(Block)]/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]
         or WhenEntry[not(T-ELSE)]/ControlStructureBody/Block[count(Statements/Statement) = 1]/Statements/Statement/Expression[pmd-kotlin:nodeText() = ('true', 'false')]

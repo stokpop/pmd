@@ -212,4 +212,28 @@ fun describe(bar: Int, x: Int): String = when {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>when on enum subject with multiple comma-separated cases grouping to true - no violation (false positive: cannot be simplified to a plain boolean expression)</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+enum class Category {
+    Alpha, Beta, Gamma, Delta, Epsilon, Zeta, Eta, Theta, Iota, Kappa
+}
+
+val Category.isGroup1: Boolean
+    get() = when (this) {
+        Category.Alpha,
+        Category.Beta,
+        Category.Gamma,
+        Category.Delta,
+        Category.Epsilon,
+        Category.Zeta,
+        Category.Eta,
+        Category.Theta,
+        -> true
+        else -> false
+    }
+        ]]></code>
+    </test-code>
+
 </test-data>
