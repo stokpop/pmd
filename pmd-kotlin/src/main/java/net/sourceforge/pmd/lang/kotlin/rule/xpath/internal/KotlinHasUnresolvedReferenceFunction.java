@@ -20,6 +20,13 @@ import nl.stokpop.typemapper.model.UnresolvedReferenceAst;
  * references on the context node's line. This typically indicates that a dependency
  * is missing from the analysis classpath.
  *
+ * <p>For star imports ({@code import com.example.*}), the Kotlin compiler does not
+ * report an unresolved reference at the import line itself even when the package is
+ * missing. This function handles that case by checking whether the package name
+ * extracted from the star import is present in the known-package index (derived from
+ * the type-hierarchy classpath scan). If the package is unknown the function returns
+ * {@code true}.
+ *
  * <p>Use this function in a rule like {@code UnresolvedType} to warn users that
  * type information is incomplete, which may cause other rules to produce false
  * positives or miss violations.

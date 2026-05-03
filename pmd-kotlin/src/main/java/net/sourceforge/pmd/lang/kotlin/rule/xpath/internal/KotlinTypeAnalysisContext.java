@@ -31,7 +31,8 @@ public final class KotlinTypeAnalysisContext {
     private static final String KT_EXTENSION = ".kt";
 
     private static final KotlinTypeAnalysisContext EMPTY = new KotlinTypeAnalysisContext(
-            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
+            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
+            Collections.emptyMap());
 
     /** Map from absolute file path → line → list of call sites on that line. */
     private final Map<String, Map<Integer, List<CallSiteAst>>> callIndex;
