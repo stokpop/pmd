@@ -5,16 +5,17 @@
         xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
 
     <test-code>
-        <description>new object in for loop — violation</description>
+        <description>same Person created every for-loop iteration — violation</description>
         <expected-problems>1</expected-problems>
-        <expected-linenumbers>4</expected-linenumbers>
+        <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
-fun bad(items: List<String>): List<String> {
-    val result = mutableListOf<String>()
-    for (item in items) {
-        val sb = StringBuilder()
-        sb.append(item)
-        result.add(sb.toString())
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun bad(name: String, amounts: List<java.math.BigDecimal>): List<BankTransaction> {
+    val result = mutableListOf<BankTransaction>()
+    for (amount in amounts) {
+        val person = Person(name)
+        result.add(BankTransaction(person, amount))
     }
     return result
 }
@@ -22,58 +23,71 @@ fun bad(items: List<String>): List<String> {
     </test-code>
 
     <test-code>
-        <description>two new objects in for loop — two violations</description>
+        <description>same Person and same BankTransaction created every iteration — two violations</description>
         <expected-problems>2</expected-problems>
-        <expected-linenumbers>3,4</expected-linenumbers>
+        <expected-linenumbers>6,7</expected-linenumbers>
         <code><![CDATA[
-fun bad(items: List<String>) {
-    for (item in items) {
-        val sb = StringBuilder()
-        val list = ArrayList<Int>()
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun bad(name: String, amounts: List<java.math.BigDecimal>): List<String> {
+    val log = mutableListOf<String>()
+    for (amount in amounts) {
+        val person = Person(name)
+        val tx = BankTransaction(person, java.math.BigDecimal.ZERO)
+        log.add(tx.toString())
     }
+    return log
 }
         ]]></code>
     </test-code>
 
     <test-code>
-        <description>new object in while loop — violation</description>
+        <description>same Person created every while-loop iteration — violation</description>
         <expected-problems>1</expected-problems>
-        <expected-linenumbers>4</expected-linenumbers>
+        <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
-fun bad(n: Int) {
-    var i = 0
-    while (i < n) {
-        val sb = StringBuilder()
-        i++
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun bad(name: String, amounts: ArrayDeque<java.math.BigDecimal>): List<BankTransaction> {
+    val result = mutableListOf<BankTransaction>()
+    while (amounts.isNotEmpty()) {
+        val person = Person(name)
+        result.add(BankTransaction(person, amounts.removeFirst()))
     }
+    return result
 }
         ]]></code>
     </test-code>
 
     <test-code>
-        <description>new object in do-while loop — violation</description>
+        <description>same Person created every do-while iteration — violation</description>
         <expected-problems>1</expected-problems>
-        <expected-linenumbers>3</expected-linenumbers>
+        <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
-fun bad(n: Int) {
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun bad(name: String, amounts: ArrayDeque<java.math.BigDecimal>): List<BankTransaction> {
+    val result = mutableListOf<BankTransaction>()
     do {
-        val obj = StringBuilder()
-    } while (false)
+        val person = Person(name)
+        result.add(BankTransaction(person, amounts.removeFirst()))
+    } while (amounts.isNotEmpty())
+    return result
 }
         ]]></code>
     </test-code>
 
     <test-code>
-        <description>object declared outside loop — no violation</description>
+        <description>Person created outside loop — no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
-fun good(items: List<String>): List<String> {
-    val result = mutableListOf<String>()
-    val sb = StringBuilder()
-    for (item in items) {
-        sb.setLength(0)
-        sb.append(item)
-        result.add(sb.toString())
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun good(name: String, amounts: List<java.math.BigDecimal>): List<BankTransaction> {
+    val person = Person(name)
+    val result = mutableListOf<BankTransaction>()
+    for (amount in amounts) {
+        result.add(BankTransaction(person, amount))
     }
     return result
 }
@@ -84,25 +98,47 @@ fun good(items: List<String>): List<String> {
         <description>lowercase function call inside loop — no violation (not a constructor)</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
-fun good(items: List<String>) {
-    for (item in items) {
-        val n = item.length
-        val s = item.lowercase()
+class Person(val name: String)
+fun good(names: List<String>): List<Person> {
+    val result = mutableListOf<Person>()
+    for (name in names) {
+        val normalized = name.trim().lowercase()
+        result.add(Person(normalized))
     }
+    return result
 }
         ]]></code>
     </test-code>
 
     <test-code>
-        <description>object used to build the result from loop variable — inherently loop-dependent — still flagged</description>
-        <expected-problems>1</expected-problems>
-        <expected-linenumbers>4</expected-linenumbers>
+        <description>BankTransaction uses loop variable amount — no violation</description>
+        <expected-problems>0</expected-problems>
         <code><![CDATA[
-fun bad(pairs: List<Pair<String, Int>>): List<String> {
-    val result = mutableListOf<String>()
-    for ((key, value) in pairs) {
-        val entry = Pair(key, value)
-        result.add(entry.toString())
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun good(name: String, amounts: List<java.math.BigDecimal>): List<BankTransaction> {
+    val person = Person(name)
+    val result = mutableListOf<BankTransaction>()
+    for (amount in amounts) {
+        val tx = BankTransaction(person, amount)
+        result.add(tx)
+    }
+    return result
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>BankTransaction uses destructured loop variables — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Person(val name: String)
+class BankTransaction(val person: Person, val amount: java.math.BigDecimal)
+fun good(entries: List<Pair<Person, java.math.BigDecimal>>): List<BankTransaction> {
+    val result = mutableListOf<BankTransaction>()
+    for ((person, amount) in entries) {
+        val tx = BankTransaction(person, amount)
+        result.add(tx)
     }
     return result
 }
