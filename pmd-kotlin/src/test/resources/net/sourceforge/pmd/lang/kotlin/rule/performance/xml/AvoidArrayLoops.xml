@@ -80,5 +80,18 @@ fun bad(matrix: Array<IntArray>, dst: Array<IntArray>) {
 }
         ]]></code>
     </test-code>
+    <test-code>
+        <description>transform loop encoding pairs of chars into bytes - no violation (not an array copy)</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+fun decode(input: CharArray, output: ByteArray) {
+    val len = input.size
+    for (i in 0 until len step 2) {
+        output[i / 2] = ((Character.digit(input[i], 16) shl 4) +
+                Character.digit(input[i + 1], 16)).toByte()
+    }
+}
+        ]]></code>
+    </test-code>
 
 </test-data>

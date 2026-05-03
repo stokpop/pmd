@@ -139,7 +139,7 @@ class Good {
     and count(.//Assignment) = 1
 ]//Assignment[
     DirectlyAssignableExpression/AssignableSuffix/IndexingSuffix
-    and Expression//PostfixUnarySuffix/IndexingSuffix
+    and Expression[count(.//PostfixUnaryExpression[PostfixUnarySuffix/IndexingSuffix]) = 1]//PostfixUnarySuffix/IndexingSuffix
 ]
                 ]]></value>
             </property>
