@@ -772,8 +772,8 @@ fun describeSign(x: Int): String {
                 <value><![CDATA[
 //PostfixUnaryExpression[
     (
-        PostfixUnarySuffix/NavigationSuffix[@Identifier='indexOf']
-        or PostfixUnarySuffix/NavigationSuffix[@Identifier='lastIndexOf']
+        pmd-kotlin:matchesSig('java.lang.String#indexOf(java.lang.String)')
+        or pmd-kotlin:matchesSig('java.lang.String#lastIndexOf(java.lang.String)')
     )
     and PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[
         string-length(pmd-kotlin:nodeText()) = 3

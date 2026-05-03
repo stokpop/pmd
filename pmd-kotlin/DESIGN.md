@@ -450,6 +450,50 @@ standard JDK classes automatically.
 in test cases without any extra configuration — they just work.  
 If type analysis were unavailable, the `UnresolvedType` rule would fire as a signal.
 
+### 8.1 Requirements for typed test cases
+
+For type resolution to work in a test case CDATA snippet:
+
+1. **Add imports.** The snippet must `import` every type it references, just like real
+   Kotlin code. Without imports, the Kotlin compiler cannot resolve symbols and
+   `matchesSig` / `typeIs` will return false.
+
+   ```kotlin
+   import java.util.LinkedList
+
+   class Example {
+       fun bad() {
+           val list = LinkedList<String>()   // type resolves to java.util.LinkedList
+       }
+   }
+   ```
+
+2. **Define referenced classes** if they are not imported from a jar. For test-only
+   types (e.g. a custom interface that the rule targets), declare a stub inside the
+   same CDATA snippet or in a companion `<code-fragment>`.
+
+3. **Add a remote jar** when the rule targets a third-party library type not available
+   on the Kotlin compiler's default classpath. Use `<source-code-with-classname>` with
+   a `<classpath>` element pointing at the artifact coordinates.  
+   Example:
+   ```xml
+   <test-code>
+       <description>...</description>
+       <expected-problems>1</expected-problems>
+       <classpath>
+           <jar>https://repo1.maven.org/maven2/com/example/lib/1.0/lib-1.0.jar</jar>
+       </classpath>
+       <code><![CDATA[
+   import com.example.Foo
+   class Bad { fun x(f: Foo) = f.method() }
+       ]]></code>
+   </test-code>
+   ```
+
+4. **Always prefer typed checks** (`matchesSig`, `typeIs`) over AST-shape checks.
+   Type info is always expected to be present in production (the `UnresolvedType` rule
+   must be resolved first); no AST-only fallback is needed.
+
 ---
 
 ## 9. `pmd-kotlin:typeIs()` — Where It Works and How

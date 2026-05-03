@@ -68,5 +68,16 @@ class Bad {
 }
         ]]></code>
     </test-code>
+    <test-code>
+        <description>indexOf on List, not String, is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Good {
+    fun findItem(items: List<String>): Int {
+        return items.indexOf("x")
+    }
+}
+        ]]></code>
+    </test-code>
 
 </test-data>
