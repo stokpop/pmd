@@ -183,6 +183,39 @@ synthetic attribute (provided by `KotlinInnerNode.getIdentifier()`).
 `Block[not(Statements/Statement)]` — detects a block with no statements.
 `Block[not(*)]` is INCORRECT because `Block` always has `T-LCURL`/`T-RCURL` tokens.
 
+### 1.11 Modifiers on declarations
+
+Modifiers (`override`, `open`, `abstract`, `private`, `suspend`, `operator`, `inline`, …) are
+represented as a `Modifiers` child of the declaration node.  The path to a specific token is:
+
+```
+FunctionDeclaration
+  Modifiers
+    Modifier
+      MemberModifier   (or VisibilityModifier / FunctionModifier / etc.)
+        T-OVERRIDE / T-OPEN / T-ABSTRACT / T-SUSPEND / …
+```
+
+Common XPath predicates:
+
+| Goal | XPath |
+|---|---|
+| Exclude `override fun` | `not(Modifiers/Modifier/MemberModifier/T-OVERRIDE)` |
+| Only `open` functions | `Modifiers/Modifier/InheritanceModifier/T-OPEN` |
+| Only `abstract` declarations | `Modifiers/Modifier/InheritanceModifier/T-ABSTRACT` |
+| Only `private` | `Modifiers/Modifier/VisibilityModifier/T-PRIVATE` |
+| Only `suspend` | `Modifiers/Modifier/FunctionModifier/T-SUSPEND` |
+| Only `operator` | `Modifiers/Modifier/FunctionModifier/T-OPERATOR` |
+| Only `inline` | `Modifiers/Modifier/FunctionModifier/T-INLINE` |
+
+The `@Modifiers` attribute on `FunctionDeclaration` (space-separated string, e.g. `'override'`) is
+provided by `pmd-kotlin:modifiers()` — see §2.7.  Use the raw `Modifiers/…/T-*` tree path when you
+need to check one specific modifier in an XPath rule; use `pmd-kotlin:modifiers()` when you need to
+test membership of an arbitrary set.
+
+The same `Modifiers` sub-tree applies to `ClassDeclaration`, `PropertyDeclaration`,
+`ObjectDeclaration`, and `SecondaryConstructor`.
+
 ---
 
 ## 2. Custom XPath Functions
@@ -241,8 +274,26 @@ Returns `true` when the context node has a given annotation.
 
 ### 2.7 `pmd-kotlin:modifiers()`
 
-Returns the set of modifier keywords on the context node
-(e.g. `'open'`, `'abstract'`, `'private'`).
+Returns the set of modifier keywords on the context node as a space-separated string
+(e.g. `'override'`, `'open abstract'`, `'private suspend'`).
+
+Use it when you need set-membership semantics on the declaration node itself:
+
+```xpath
+(: fires only on non-override functions :)
+//FunctionDeclaration[not(pmd-kotlin:modifiers() = 'override')]
+
+(: fires only on suspend functions :)
+//FunctionDeclaration[pmd-kotlin:modifiers() = 'suspend']
+```
+
+For a single well-known modifier, the direct tree path (§1.11) is equally readable and avoids a
+function call:
+
+```xpath
+(: preferred for a single modifier check :)
+//FunctionDeclaration[not(Modifiers/Modifier/MemberModifier/T-OVERRIDE)]
+```
 
 ### 2.8 `pmd-kotlin:insideLoop()`
 
