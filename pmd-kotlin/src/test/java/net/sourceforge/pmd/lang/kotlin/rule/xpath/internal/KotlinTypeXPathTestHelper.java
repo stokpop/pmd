@@ -46,6 +46,11 @@ public class KotlinTypeXPathTestHelper implements AutoCloseable {
         return new KotlinTypeXPathTestHelper(dir);
     }
 
+    /** Returns the source directory used by this helper (for locating snippet files). */
+    public File getSourceDir() {
+        return sourceDir;
+    }
+
     /**
      * Creates a helper that will analyze a single Kotlin source code string.
      * The code is written to a temporary file named {@code snippet.kt}.

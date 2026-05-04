@@ -7,5 +7,5 @@ package net.sourceforge.pmd.lang.kotlin.rule.errorprone;
 import net.sourceforge.pmd.test.PmdRuleTst;
 
 class AvoidRethrowingExceptionTest extends PmdRuleTst {
-    // no additional unit tests
+    // test cases in xml/AvoidRethrowingException.xml
 }

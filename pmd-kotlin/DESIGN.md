@@ -534,22 +534,50 @@ For type resolution to work in a test case CDATA snippet:
    types (e.g. a custom interface that the rule targets), declare a stub inside the
    same CDATA snippet or in a companion `<code-fragment>`.
 
-3. **Add a remote jar** when the rule targets a third-party library type not available
-   on the Kotlin compiler's default classpath. Use `<source-code-with-classname>` with
-   a `<classpath>` element pointing at the artifact coordinates.  
-   Example:
+3. **Add a third-party jar as a Maven test dependency** when the rule targets a library
+   type not available on the Kotlin compiler's default classpath (e.g. `kotlinx.coroutines`,
+   Spring, OkHttp, etc.).
+
+   `KotlinLanguageProcessor.getAuxClasspathEntries()` has three fallback sources it checks
+   in order:
+   1. The `--aux-classpath` CLI property (used in production)
+   2. A `URLClassLoader` hierarchy (used by PMD Designer)
+   3. **`java.class.path` system property** -- Maven Surefire puts all test-scoped
+      dependencies here automatically
+
+   This means: adding the library as `<scope>test</scope>` in `pom.xml` is all that is
+   needed.  The language processor picks it up from `java.class.path` and feeds it to
+   `KotlinTypeMapper`.  No code changes to tests are required.
+
    ```xml
-   <test-code>
-       <description>...</description>
-       <expected-problems>1</expected-problems>
-       <classpath>
-           <jar>https://repo1.maven.org/maven2/com/example/lib/1.0/lib-1.0.jar</jar>
-       </classpath>
-       <code><![CDATA[
-   import com.example.Foo
-   class Bad { fun x(f: Foo) = f.method() }
-       ]]></code>
-   </test-code>
+   <!-- pmd-kotlin/pom.xml -->
+   <dependency>
+       <groupId>org.jetbrains.kotlinx</groupId>
+       <artifactId>kotlinx-coroutines-core-jvm</artifactId>
+       <version>1.8.0</version>
+       <scope>test</scope>
+   </dependency>
+   ```
+
+   After adding the dependency, any XML test case `<code>` snippet that imports the
+   library's types will resolve correctly and `typeIs` / `typeIsExactly` / `matchesSig`
+   will work as expected -- no extra Java test code is needed.
+
+   **Type alias expansion:** `KotlinTypeMapper` always expands `typealias` chains down
+   to the final concrete JVM type.  This means the FQN you provide to `typeIsExactly()`
+   must be the fully-expanded JVM type, NOT the alias name.  For example:
+
+   | Import in Kotlin code | FQN stored by type-mapper |
+   |---|---|
+   | `kotlinx.coroutines.CancellationException` | `java.util.concurrent.CancellationException` |
+
+   (Chain: `kotlinx.coroutines.CancellationException` → `kotlin.coroutines.cancellation.CancellationException` → `java.util.concurrent.CancellationException`)
+
+   Use the diagnostic pattern below to discover the actual FQN when in doubt:
+   ```java
+   TypedAst ast = new KotlinTypeMapper(tmpDir, classpathJars, false).analyze();
+   ast.getFiles().forEach(f -> f.getDeclarations().forEach(d ->
+       System.out.println(d.getKind() + " " + d.getName() + " type=" + d.getType())));
    ```
 
 4. **Always prefer typed checks** (`matchesSig`, `typeIs`) over AST-shape checks.

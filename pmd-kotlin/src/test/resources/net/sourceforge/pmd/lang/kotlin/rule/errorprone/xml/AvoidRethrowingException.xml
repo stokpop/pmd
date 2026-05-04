@@ -85,11 +85,12 @@ fun risky() {}
     </test-code>
 
     <test-code>
-        <description>catch CancellationException and rethrow is not a violation</description>
+        <description>catch CancellationException and rethrow is not a violation (coroutines convention)</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 import kotlinx.coroutines.CancellationException
-fun good() {
+
+fun check() {
     try {
         risky()
     } catch (e: CancellationException) {

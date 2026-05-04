@@ -34,9 +34,12 @@ echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 PMD needs compiled class files on its classpath. Build at least the debug variant:
 
 ```bash
-# Switch to Java 17 or 21 if needed (sdkman example):
-sdk use java 21.0.10-librca
-# or set directly:
+# Switch to Java 17 or 21 if needed.
+# sdkman example (source init first if not in .bashrc):
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk use java 21      # picks the latest Java 21 managed by sdkman
+
+# or set JAVA_HOME directly:
 export JAVA_HOME=/path/to/jdk-21
 
 ./gradlew :app:compileDebugKotlin :app:compileDebugJavaWithJavac
@@ -59,11 +62,14 @@ tasks.register("printAndroidClasspath") {
 }
 ```
 
-Run it and save the output:
+Run it and save the output. Set `ANDROID_SDK_ROOT` explicitly here so all
+subsequent commands in this section work regardless of shell environment:
 
 ```bash
+export ANDROID_SDK_ROOT=~/Android/Sdk   # adjust if SDK is elsewhere
+
 ./gradlew :app:printAndroidClasspath -q 2>&1 \
-  | grep "\.jar\|classes\.jar" > /tmp/android_classpath.txt
+  | grep "\.jar$" > /tmp/android_classpath.txt
 ```
 
 > **Tip:** The `printAndroidClasspath` task uses Gradle's transform pipeline, which
@@ -86,6 +92,11 @@ echo "$PWD/app/build/tmp/kotlin-classes/debug"            >> /tmp/android_classp
 echo "$PWD/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes" \
                                                            >> /tmp/android_classpath.txt
 ```
+
+> **Warning:** If `ANDROID_SDK_ROOT` is not set, `android.jar` will be silently added
+> with a broken path and PMD will crash with `NoClassDefFoundError: android/...`.
+> PMD logs a `[WARN] Skipping invalid Kotlin aux classpath entry` when this happens.
+> Always verify the path resolves: `ls "$ANDROID_SDK_ROOT/platforms/android-35/android.jar"`
 
 Build a colon-separated string:
 

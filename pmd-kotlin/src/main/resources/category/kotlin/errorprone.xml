@@ -382,7 +382,7 @@ class Good {
                 <value><![CDATA[
 //CatchBlock[
     count(Block/Statements/Statement) = 1
-    and not(Type//SimpleUserType[@Identifier = 'CancellationException'])
+    and not(pmd-kotlin:typeIsExactly('java.util.concurrent.CancellationException'))
     and Block//JumpExpression[
         T-THROW
         and .//PrimaryExpression[
