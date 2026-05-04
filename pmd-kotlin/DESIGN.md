@@ -597,6 +597,53 @@ on all other node types.
 
 ---
 
+## 10a. `AvoidInstantiatingObjectsInLoops` — Loop-Variable Suppression
+
+The rule suppresses violations when the constructor's arguments directly reference
+the for-loop's iteration variable(s), i.e. the object is different each iteration.
+
+### Loop variable collection
+
+```xpath
+let $loopVars := (
+    ancestor::ForStatement/VariableDeclaration
+    | ancestor::ForStatement/MultiVariableDeclaration/VariableDeclaration
+)/@Identifier
+```
+
+`ancestor::ForStatement` returns ALL enclosing for-loops, so nested loops
+contribute all their loop vars (e.g. `(dir, achievementName)`).
+
+### Checking for loop-var use — use `.//ValueArguments`, NOT `PostfixUnarySuffix/CallSuffix/ValueArguments`
+
+**Key finding:** for a regular constructor call `File(dir, "x")`, the args live under
+`PostfixUnarySuffix/CallSuffix/ValueArguments`. However, for an **anonymous class
+delegation** — `object : FileObserver(dir, CLOSE_WRITE)` — the args live under
+`ObjectLiteral/DelegationSpecifiers/.../ConstructorInvocation/ValueArguments`, which
+is **not** under a `PostfixUnarySuffix`. Using a narrow path misses this case.
+
+The fix is to use `.//ValueArguments` (any descendant) instead:
+
+```xpath
+not(.//ValueArguments//PrimaryExpression[@Identifier = $loopVars])
+```
+
+This covers both patterns:
+- `File(dir, "x")` → `PostfixUnarySuffix/CallSuffix/ValueArguments`
+- `object : SomeClass(dir)` → `DelegationSpecifiers/.../ConstructorInvocation/ValueArguments`
+
+Also keep the constructor search scoped to the initializer expression, not nested method
+bodies inside anonymous objects. For `val watcher = object : FileWatcher(dir) { ... }`,
+constructors or string literals inside `override fun onEvent(...)` are descendants of the
+property initializer in the raw AST, but should not make the `watcher` declaration a loop
+allocation violation. Exclude those with:
+
+```xpath
+not(ancestor::FunctionDeclaration[ancestor::PropertyDeclaration])
+```
+
+---
+
 ## 11. `AvoidArrayLoops` Rule Notes
 
 The rule uses structural detection (no type analysis needed):

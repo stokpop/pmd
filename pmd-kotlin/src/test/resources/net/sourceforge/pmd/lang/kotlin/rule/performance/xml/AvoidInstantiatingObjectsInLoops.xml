@@ -144,5 +144,42 @@ fun good(entries: List<Pair<Person, java.math.BigDecimal>>): List<BankTransactio
 }
         ]]></code>
     </test-code>
+    <test-code>
+        <description>java.io.File uses loop variable dir — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+import java.io.File
+fun good(watchDirs: List<File>) {
+    for (dir in watchDirs) {
+        val achFile = File(dir, "achievements.json")
+        achFile.mkdirs()
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>anonymous class delegation uses loop var — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+import java.io.File
+abstract class FileWatcher(val dir: File) {
+    abstract fun onEvent(path: String?)
+}
+fun good(watchDirs: List<File>) {
+    for (dir in watchDirs) {
+        val watcher = object : FileWatcher(dir) {
+            override fun onEvent(path: String?) {
+                if (path == "achievements.json") {
+                    process(File(dir, "achievements.json"))
+                }
+            }
+        }
+        watcher.onEvent("test")
+    }
+}
+fun process(file: File) {}
+        ]]></code>
+    </test-code>
 
 </test-data>

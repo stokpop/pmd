@@ -350,6 +350,7 @@ class Good {
     pmd-kotlin:insideLoop()
     and Expression//PostfixUnaryExpression[
         pmd-kotlin:matchesSig('_#<init>(*)')
+        and not(ancestor::FunctionDeclaration[ancestor::PropertyDeclaration])
         and (
             let $loopVars := (
                 ancestor::ForStatement/VariableDeclaration
@@ -357,7 +358,7 @@ class Good {
             )/@Identifier
             return (
                 empty($loopVars)
-                or not(PostfixUnarySuffix/CallSuffix/ValueArguments//PrimaryExpression[@Identifier = $loopVars])
+                or not(.//ValueArguments//PrimaryExpression[@Identifier = $loopVars])
             )
         )
     ]
@@ -983,4 +984,3 @@ class Good {
     </rule>
 
 </ruleset>
-
