@@ -159,6 +159,34 @@ fun good(watchDirs: List<File>) {
     </test-code>
 
     <test-code>
+        <description>constructor arg is a derived loop-body local (1-level) — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Widget(val label: String)
+fun good(items: List<String>) {
+    for (i in items.indices) {
+        val elem = items[i]       // derived from loop var i
+        val w = Widget(elem)      // elem is derived — not a repeated identical object
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>constructor arg method-call on derived local (1-level) — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Report(val title: String)
+fun good(sections: Array<String>) {
+    for (i in sections.indices) {
+        val section = sections[i]
+        val report = Report(section.trim())  // section (derived var) in args
+    }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
         <description>anonymous class delegation uses loop var — no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[

@@ -352,13 +352,17 @@ class Good {
         pmd-kotlin:matchesSig('_#<init>(*)')
         and not(ancestor::FunctionDeclaration[ancestor::PropertyDeclaration])
         and (
-            let $loopVars := (
-                ancestor::ForStatement/VariableDeclaration
-                | ancestor::ForStatement/MultiVariableDeclaration/VariableDeclaration
-            )/@Identifier
+            let $loopVars    := (
+                    ancestor::ForStatement/VariableDeclaration
+                    | ancestor::ForStatement/MultiVariableDeclaration/VariableDeclaration
+                )/@Identifier,
+                $derivedVars := ancestor::ForStatement//PropertyDeclaration[
+                    not(ancestor::FunctionDeclaration[ancestor::PropertyDeclaration])
+                    and Expression//PrimaryExpression[@Identifier = $loopVars]
+                ]/VariableDeclaration/@Identifier
             return (
                 empty($loopVars)
-                or not(.//ValueArguments//PrimaryExpression[@Identifier = $loopVars])
+                or not(.//ValueArguments//PrimaryExpression[@Identifier = ($loopVars, $derivedVars)])
             )
         )
     ]
