@@ -188,14 +188,14 @@ class Good {
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#functionnametooshort">
         <description>
             Function names should be easy to understand and describe the intention. Makes developers happy.
-            Short names that are conventional in Kotlin idioms (e.g. event listener `on`) can be
-            excluded via the `allowedNames` property.
+            Short names that are conventional in Kotlin or platform idioms (e.g. event listener `on`,
+            Android density-pixel helper `dp`) can be excluded via the `allowedNames` property.
         </description>
         <priority>3</priority>
         <properties>
             <property name="allowedNames" type="List[String]"
                       description="Short function names that are conventional and should not be flagged."
-                      value="on"/>
+                      value="on,dp"/>
             <property name="xpath">
                 <value><![CDATA[
                     //FunctionDeclaration[
@@ -214,6 +214,8 @@ fun calculateLayout() {} // no violation
 fun on(listener: () -> Unit) {} // no violation — 'on' is in allowedNames by default
 
 override fun on(event: String) {} // no violation — overrides are always excluded
+
+fun dp(value: Int): Int = (value * 2.5f).toInt() // no violation — 'dp' is in allowedNames by default (Android convention)
 ]]>
         </example>
     </rule>

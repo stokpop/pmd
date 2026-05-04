@@ -57,4 +57,14 @@ class EventBus {
 }
         ]]></code>
     </test-code>
+
+    <test-code>
+        <description>'dp' is in the default allowedNames — Android density-pixel helper should not be flagged</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class MyView {
+    private fun dp(value: Int): Int = (value * 2.5f).toInt()
+}
+        ]]></code>
+    </test-code>
 </test-data>
