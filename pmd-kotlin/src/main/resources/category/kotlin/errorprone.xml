@@ -508,6 +508,77 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="ReturnEmptyCollectionRatherThanNull"
+          language="kotlin"
+          since="7.14.0"
+          message="Return an empty collection rather than null from a Collection/Map function"
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#returnemptycollectionratherthannull">
+        <description>
+Returning null from a function that has a nullable Collection or Map return type forces
+callers to null-check the result before using it. Returning an empty collection (e.g.
+emptyList(), emptyMap(), emptySet()) is less error-prone and leads to cleaner call sites.
+
+This is the Kotlin equivalent of the Java PMD rule of the same name.
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//JumpExpression[
+    T-RETURN
+    and Expression[pmd-kotlin:nodeText() = 'null']
+    and not(ancestor::LambdaLiteral)
+    and not(ancestor::AnonymousFunction)
+    and ancestor::FunctionDeclaration[1][
+        pmd-kotlin:isNullable()
+        and (pmd-kotlin:typeIs('java.util.Collection')
+             or pmd-kotlin:typeIs('java.util.Map')
+             or pmd-kotlin:typeIs('kotlin.Array'))
+    ]
+]
+|
+//FunctionDeclaration[
+    pmd-kotlin:isNullable()
+    and FunctionBody/Expression[pmd-kotlin:nodeText() = 'null']
+    and (pmd-kotlin:typeIs('java.util.Collection')
+         or pmd-kotlin:typeIs('java.util.Map')
+         or pmd-kotlin:typeIs('kotlin.Array'))
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        <example>
+<![CDATA[
+import java.util.List
+
+class Bad {
+    // violation: returns null instead of an empty collection
+    fun getItems(): List<String>? {
+        return null
+    }
+
+    // violation: expression body
+    fun getConfig(): List<String>? = null
+}
+
+class Good {
+    // ok: return an empty collection
+    fun getItems(): List<String>? {
+        return emptyList()
+    }
+
+    // ok: return null from a non-collection nullable type is fine
+    fun getLabel(): String? {
+        return null
+    }
+}
+]]>
+        </example>
+    </rule>
+
     <rule name="ReturnFromFinallyBlock"
           language="kotlin"
           since="7.14.0"

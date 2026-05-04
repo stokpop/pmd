@@ -333,6 +333,44 @@ ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
 pmd-kotlin:insideLoop()
 ```
 
+### 2.9 `pmd-kotlin:isNullable()`
+
+Returns `true` when the context node's resolved type is **nullable** (i.e. its
+type name ends with `?`).
+
+Supported on the same nodes as `typeIs`:
+- `PropertyDeclaration` — checks the property / local variable type
+- `FunctionDeclaration` — checks the return type
+- `FunctionValueParameter` / `ClassParameter` — checks the parameter type
+- `CatchBlock` — checks the caught exception type
+- `ForStatement` — checks the loop variable type
+
+The check is based on the resolved type string stored by kotlin-type-mapper, which
+appends `?` for nullable Kotlin types (e.g. `"java.util.List<java.lang.String>?"`
+for `List<String>?`). This means it works even when the nullability is not written
+explicitly in the source (e.g. inferred nullable locals).
+
+Because `return null` in a non-nullable context is a compile error in Kotlin, rules
+that match `return null` do **not** need an extra `isNullable()` guard — null returns
+can only exist when the return type is already nullable. Use `isNullable()` when you
+need to explicitly distinguish nullable from non-nullable declarations.
+
+```xpath
+(: nullable return type :)
+//FunctionDeclaration[pmd-kotlin:isNullable() and pmd-kotlin:typeIs('java.util.Collection')]
+
+(: nullable property :)
+//PropertyDeclaration[pmd-kotlin:isNullable() and pmd-kotlin:typeIs('kotlin.String')]
+
+(: nullable parameter :)
+//FunctionValueParameter[pmd-kotlin:isNullable()]
+```
+
+**Note on `matchesSig` and nullability:** `matchesSig` operates at JVM signature level
+where `String?` and `String` are indistinguishable. Kotlin does not allow overloading
+by nullability. Therefore `matchesSig` has no nullable awareness — combine it with
+`isNullable()` when needed.
+
 ---
 
 ## 3. Rule Authoring Patterns

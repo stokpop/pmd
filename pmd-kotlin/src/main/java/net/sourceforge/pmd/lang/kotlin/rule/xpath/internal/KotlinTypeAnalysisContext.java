@@ -287,8 +287,11 @@ public final class KotlinTypeAnalysisContext {
     }
 
     private static String substringBeforeAngle(String s) {
-        int idx = s.indexOf('<');
-        return idx >= 0 ? s.substring(0, idx) : s;
+        // Strip trailing '?' (nullable marker) before extracting the raw type name,
+        // so that bare nullable types like "java.util.List?" are handled correctly.
+        String stripped = s.endsWith("?") ? s.substring(0, s.length() - 1) : s;
+        int idx = stripped.indexOf('<');
+        return idx >= 0 ? stripped.substring(0, idx) : stripped;
     }
 
     private static String canonicalize(String path) {
