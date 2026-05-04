@@ -75,4 +75,32 @@ fun describe(x: Int): String {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>multi-value when branch groups many enum cases into one — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+enum class Shape {
+    Circle, Square, Triangle, Rectangle, Pentagon, Hexagon, Octagon, Ellipse, Rhombus, Star;
+
+    val isRound: Boolean
+        get() = when (this) {
+            Circle, Ellipse -> true
+            Square, Triangle, Rectangle, Pentagon, Hexagon, Octagon, Rhombus, Star -> false
+        }
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>multi-value single branch covers all cases at threshold — no violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+enum class Season { Spring, Summer, Autumn, Winter }
+fun isWarm(s: Season): Boolean = when (s) {
+    Season.Spring, Season.Summer, Season.Autumn -> true
+    else -> false
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

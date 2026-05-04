@@ -739,7 +739,10 @@ Kotlin equivalent of Java rule: category/java/performance.xml/TooFewBranchesForA
                       value="3" min="2"/>
             <property name="xpath">
                 <value><![CDATA[
-//WhenExpression[count(WhenEntry) < $minimumNumberCaseForAWhen]
+//WhenExpression[
+    count(WhenEntry) < $minimumNumberCaseForAWhen
+    and count(WhenEntry/WhenCondition) < $minimumNumberCaseForAWhen
+]
                 ]]></value>
             </property>
         </properties>
