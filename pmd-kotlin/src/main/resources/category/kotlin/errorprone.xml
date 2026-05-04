@@ -364,7 +364,7 @@ fun good() {
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidthrowingnullpointerexception">
         <description>
-            Explicitly throwing NullPointerException is misleading — callers and tools expect NPE to
+            Explicitly throwing NullPointerException is misleading -- callers and tools expect NPE to
             indicate an unintentional null dereference, not a deliberate contract violation.
             Use requireNotNull(), checkNotNull(), or error() to signal intentional null checks with
             a clear message.
@@ -376,7 +376,7 @@ fun good() {
 //JumpExpression[
     T-THROW
     and .//PostfixUnaryExpression[
-        PrimaryExpression/@Identifier = 'NullPointerException'
+        pmd-kotlin:typeIsExactly('java.lang.NullPointerException')
     ]
 ]
                 ]]></value>
@@ -413,7 +413,10 @@ fun good(value: String?) {
 //JumpExpression[
     T-THROW
     and .//PostfixUnaryExpression[
-        PrimaryExpression/@Identifier = ('Throwable', 'Exception', 'RuntimeException', 'Error')
+        pmd-kotlin:typeIsExactly('java.lang.Throwable')
+        or pmd-kotlin:typeIsExactly('java.lang.Exception')
+        or pmd-kotlin:typeIsExactly('java.lang.RuntimeException')
+        or pmd-kotlin:typeIsExactly('java.lang.Error')
     ]
 ]
                 ]]></value>
@@ -829,7 +832,7 @@ class Good {
     <rule name="UnresolvedType"
           language="kotlin"
           since="7.x"
-          message="Type could not be resolved for this import — add the missing dependency to the PMD analysis classpath for full type-aware analysis."
+          message="Type could not be resolved for this import -- add the missing dependency to the PMD analysis classpath for full type-aware analysis."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#unresolvedtype">
         <description>
@@ -873,12 +876,12 @@ import java.util.Date                  // ok: java.util is always resolvable
         <description>
             Calling java.lang.String#toLowerCase() or #toUpperCase() without a Locale argument
             uses the default system Locale, which can produce unexpected results for locale-sensitive
-            characters (e.g., Turkish 'i' → 'İ' with toUpperCase(Locale("tr"))).
+            characters (e.g., Turkish 'i' -> 'I' with toUpperCase(Locale("tr"))).
 
             Kotlin idiomatic alternatives:
-            - str.lowercase() / str.uppercase() — use Locale.ROOT (locale-insensitive, safe for
+            - str.lowercase() / str.uppercase() -- use Locale.ROOT (locale-insensitive, safe for
               identifiers, file names, protocol keywords)
-            - str.lowercase(Locale.getDefault()) / str.uppercase(Locale.getDefault()) — explicit
+            - str.lowercase(Locale.getDefault()) / str.uppercase(Locale.getDefault()) -- explicit
               locale-sensitive conversion for user-visible strings
 
             Note: this rule requires kotlin-type-mapper pre-analysis to be available.

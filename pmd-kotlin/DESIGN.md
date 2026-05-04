@@ -1,4 +1,4 @@
-# pmd-kotlin — Design and Implementation Notes
+# pmd-kotlin -- Design and Implementation Notes
 
 This document captures design decisions, AST structure insights, and implementation
 patterns for the `pmd-kotlin` module. It is a living document; update it as new
@@ -15,7 +15,7 @@ src/main/antlr4/net/sourceforge/pmd/lang/kotlin/ast/Kotlin.g4
 ```
 
 All grammar rule names become AST node names in PascalCase
-(e.g. `postfixUnaryExpression` → `PostfixUnaryExpression`).
+(e.g. `postfixUnaryExpression` -> `PostfixUnaryExpression`).
 Terminal tokens appear as `T-<TOKEN_NAME>` children (e.g. `T-THROW`, `T-RETURN`).
 
 ### 1.1 Method/property call chains
@@ -24,22 +24,22 @@ A chained expression like `a.b().c` is represented as a **left-recursive tree**
 of `PostfixUnaryExpression` nodes, each adding one `PostfixUnarySuffix`:
 
 ```
-PostfixUnaryExpression            ← a.b().c  (the whole thing)
-  PostfixUnaryExpression          ← a.b()
-    PostfixUnaryExpression        ← a.b
-      PostfixUnaryExpression      ← a  (primary)
+PostfixUnaryExpression            <- a.b().c  (the whole thing)
+  PostfixUnaryExpression          <- a.b()
+    PostfixUnaryExpression        <- a.b
+      PostfixUnaryExpression      <- a  (primary)
       PostfixUnarySuffix
         NavigationSuffix[@Identifier='b']
     PostfixUnarySuffix
-      CallSuffix / ValueArguments  ← ()
+      CallSuffix / ValueArguments  <- ()
   PostfixUnarySuffix
     NavigationSuffix[@Identifier='c']
 ```
 
 **Key attributes:**
-- `NavigationSuffix/@Identifier` — the method/property name accessed via `.`
-- `CallSuffix` — present when the suffix is a call (has `ValueArguments`, possibly `AnnotatedLambda`)
-- `ValueArguments/ValueArgument` — positional arguments of a call
+- `NavigationSuffix/@Identifier` -- the method/property name accessed via `.`
+- `CallSuffix` -- present when the suffix is a call (has `ValueArguments`, possibly `AnnotatedLambda`)
+- `ValueArguments/ValueArgument` -- positional arguments of a call
 
 **XPath patterns for chains:**
 - Detect `.methodName` navigation: `PostfixUnarySuffix/NavigationSuffix[@Identifier='methodName']`
@@ -58,7 +58,7 @@ PostfixUnaryExpression (the call)
     CallSuffix
       ValueArguments
         ValueArgument
-          ... expression ...       ← the argument
+          ... expression ...       <- the argument
 ```
 
 For lambda-form calls (`log.debug { ... }`):
@@ -88,17 +88,17 @@ Token is `T-ADD` (not `T-PLUS`). Grammar: `additiveOperator : ADD | SUB`.
 
 ```
 TryExpression
-  Block                          ← try body
-  CatchBlock                     ← one per catch clause
-    SimpleIdentifier             ← exception variable name (e.g. "e")
-    Type                         ← exception type
-    Block                        ← catch body
-  FinallyBlock                   ← optional
+  Block                          <- try body
+  CatchBlock                     <- one per catch clause
+    SimpleIdentifier             <- exception variable name (e.g. "e")
+    Type                         <- exception type
+    Block                        <- catch body
+  FinallyBlock                   <- optional
     Block
 ```
 
 **Empty catch detection:**
-`Block[not(Statements/Statement)]` — `Block` always has `T-LCURL`, `T-RCURL` tokens as
+`Block[not(Statements/Statement)]` -- `Block` always has `T-LCURL`, `T-RCURL` tokens as
 children even when empty, so `Block[not(*)]` is WRONG. Use `Statements/Statement` instead.
 
 `Statements` is always present as a grammar rule child of `Block`; `Statement` children
@@ -119,10 +119,10 @@ forms exist (`functionLiteral : lambdaLiteral | anonymousFunction`).
 `JumpExpression` wraps throw/return/continue/break:
 ```
 JumpExpression
-  T-THROW         ← for throw
-  T-RETURN        ← for return
-  T-CONTINUE      ← for continue
-  T-BREAK         ← for break
+  T-THROW         <- for throw
+  T-RETURN        <- for return
+  T-CONTINUE      <- for continue
+  T-BREAK         <- for break
 ```
 Match with `JumpExpression[T-THROW]` etc.
 
@@ -130,8 +130,8 @@ Match with `JumpExpression[T-THROW]` etc.
 
 ```
 WhenExpression
-  WhenSubject?                    ← the (expr) in  when (expr) { ... }
-  WhenEntry*                      ← each branch incl. else
+  WhenSubject?                    <- the (expr) in  when (expr) { ... }
+  WhenEntry*                      <- each branch incl. else
     WhenCondition / ELSE
     ControlStructureBody
 ```
@@ -140,10 +140,10 @@ WhenExpression
 
 ### 1.7 Loops
 
-Grammar rule names → PMD AST node names:
-- `forStatement`    → `ForStatement`
-- `whileStatement`  → `WhileStatement`
-- `doWhileStatement` → `DoWhileStatement`
+Grammar rule names -> PMD AST node names:
+- `forStatement`    -> `ForStatement`
+- `whileStatement`  -> `WhileStatement`
+- `doWhileStatement` -> `DoWhileStatement`
 
 Loop body is a `ControlStructureBody` child (which wraps a `Block` or single `Statement`).
 
@@ -156,14 +156,14 @@ ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
 
 ```
 Assignment
-  directlyAssignableExpression / assignableExpression   ← left-hand side
-  T-ASSIGNMENT  or  AssignmentAndOperator               ← = or +=, -=, etc.
-    T-ADD_ASSIGNMENT   ← +=
-    T-SUB_ASSIGNMENT   ← -=
-    T-MULT_ASSIGNMENT  ← *=
-    T-DIV_ASSIGNMENT   ← /=
-    T-MOD_ASSIGNMENT   ← %=
-  Expression                                            ← right-hand side
+  directlyAssignableExpression / assignableExpression   <- left-hand side
+  T-ASSIGNMENT  or  AssignmentAndOperator               <- = or +=, -=, etc.
+    T-ADD_ASSIGNMENT   <- +=
+    T-SUB_ASSIGNMENT   <- -=
+    T-MULT_ASSIGNMENT  <- *=
+    T-DIV_ASSIGNMENT   <- /=
+    T-MOD_ASSIGNMENT   <- %=
+  Expression                                            <- right-hand side
 ```
 
 ### 1.9 Identifier text access
@@ -180,12 +180,12 @@ synthetic attribute (provided by `KotlinInnerNode.getIdentifier()`).
 
 ### 1.10 Empty block detection
 
-`Block[not(Statements/Statement)]` — detects a block with no statements.
+`Block[not(Statements/Statement)]` -- detects a block with no statements.
 `Block[not(*)]` is INCORRECT because `Block` always has `T-LCURL`/`T-RCURL` tokens.
 
 ### 1.11 Modifiers on declarations
 
-Modifiers (`override`, `open`, `abstract`, `private`, `suspend`, `operator`, `inline`, …) are
+Modifiers (`override`, `open`, `abstract`, `private`, `suspend`, `operator`, `inline`, ...) are
 represented as a `Modifiers` child of the declaration node.  The path to a specific token is:
 
 ```
@@ -193,7 +193,7 @@ FunctionDeclaration
   Modifiers
     Modifier
       MemberModifier   (or VisibilityModifier / FunctionModifier / etc.)
-        T-OVERRIDE / T-OPEN / T-ABSTRACT / T-SUSPEND / …
+        T-OVERRIDE / T-OPEN / T-ABSTRACT / T-SUSPEND / ...
 ```
 
 Common XPath predicates:
@@ -209,7 +209,7 @@ Common XPath predicates:
 | Only `inline` | `Modifiers/Modifier/FunctionModifier/T-INLINE` |
 
 The `@Modifiers` attribute on `FunctionDeclaration` (space-separated string, e.g. `'override'`) is
-provided by `pmd-kotlin:modifiers()` — see §2.7.  Use the raw `Modifiers/…/T-*` tree path when you
+provided by `pmd-kotlin:modifiers()` -- see Section2.7.  Use the raw `Modifiers/.../T-*` tree path when you
 need to check one specific modifier in an XPath rule; use `pmd-kotlin:modifiers()` when you need to
 test membership of an arbitrary set.
 
@@ -223,12 +223,12 @@ The same `Modifiers` sub-tree applies to `ClassDeclaration`, `PropertyDeclaratio
 ### 2.1 `pmd-kotlin:typeIs(fqcn)`
 
 Returns `true` if the **type** of the context node is `fqcn` or a subtype.
-See §9 for details on where and how type resolution works.
+See Section9 for details on where and how type resolution works.
 
 Most reliable placements:
-- `PropertyDeclaration` — resolves the declared variable type
-- `CatchBlock` — resolves the caught exception type
-- `PostfixUnaryExpression` — resolves the return type of the call
+- `PropertyDeclaration` -- resolves the declared variable type
+- `CatchBlock` -- resolves the caught exception type
+- `PostfixUnaryExpression` -- resolves the return type of the call
 
 ### 2.2 `pmd-kotlin:typeIsExactly(fqcn)`
 
@@ -256,11 +256,11 @@ matching the signature. Signature format: `receiverType#methodName(paramType,...
 The outer node (`sb.toString().length`) has `toString()` as a call site in its range
 AND has `.length` as a direct `NavigationSuffix`.
 
-**Avoiding doubled violations — the structural anchor pattern:**
+**Avoiding doubled violations -- the structural anchor pattern:**
 
 Because `matchesSig` matches any `PostfixUnaryExpression` whose column range contains
-the target call site, AND because `a.method()` produces **two** nested PUE nodes — one
-for `a.method` (navigation only) and one for `a.method()` (navigation + call) — a bare
+the target call site, AND because `a.method()` produces **two** nested PUE nodes -- one
+for `a.method` (navigation only) and one for `a.method()` (navigation + call) -- a bare
 `matchesSig` predicate will fire **twice** on the same method call.
 
 To fire exactly once, combine `matchesSig` with a direct `@Identifier` structural anchor:
@@ -277,14 +277,14 @@ child) and excludes the outer `a.valueOf(i)` PUE (which has a CallSuffix as the 
 child, not a NavigationSuffix).
 
 **Key rule: always pair `matchesSig` with a `NavigationSuffix[@Identifier='method']`
-structural anchor.** This `@Identifier` check is NOT a type-fallback — it is a necessary
+structural anchor.** This `@Identifier` check is NOT a type-fallback -- it is a necessary
 locator that selects the correct PUE level. Never remove it when refactoring rules.
 
-### 2.4 `pmd-kotlin:matchesSig` — wildcards
+### 2.4 `pmd-kotlin:matchesSig` -- wildcards
 
-- `_` — wildcard for a single type (receiver or parameter)
-- `*` — wildcard for the entire parameter list
-- `<init>` — matches constructors
+- `_` -- wildcard for a single type (receiver or parameter)
+- `*` -- wildcard for the entire parameter list
+- `<init>` -- matches constructors
 
 ### 2.5 `pmd-kotlin:nodeText()`
 
@@ -311,7 +311,7 @@ Use it when you need set-membership semantics on the declaration node itself:
 //FunctionDeclaration[pmd-kotlin:modifiers() = 'suspend']
 ```
 
-For a single well-known modifier, the direct tree path (§1.11) is equally readable and avoids a
+For a single well-known modifier, the direct tree path (Section1.11) is equally readable and avoids a
 function call:
 
 ```xpath
@@ -339,11 +339,11 @@ Returns `true` when the context node's resolved type is **nullable** (i.e. its
 type name ends with `?`).
 
 Supported on the same nodes as `typeIs`:
-- `PropertyDeclaration` — checks the property / local variable type
-- `FunctionDeclaration` — checks the return type
-- `FunctionValueParameter` / `ClassParameter` — checks the parameter type
-- `CatchBlock` — checks the caught exception type
-- `ForStatement` — checks the loop variable type
+- `PropertyDeclaration` -- checks the property / local variable type
+- `FunctionDeclaration` -- checks the return type
+- `FunctionValueParameter` / `ClassParameter` -- checks the parameter type
+- `CatchBlock` -- checks the caught exception type
+- `ForStatement` -- checks the loop variable type
 
 The check is based on the resolved type string stored by kotlin-type-mapper, which
 appends `?` for nullable Kotlin types (e.g. `"java.util.List<java.lang.String>?"`
@@ -351,7 +351,7 @@ for `List<String>?`). This means it works even when the nullability is not writt
 explicitly in the source (e.g. inferred nullable locals).
 
 Because `return null` in a non-nullable context is a compile error in Kotlin, rules
-that match `return null` do **not** need an extra `isNullable()` guard — null returns
+that match `return null` do **not** need an extra `isNullable()` guard -- null returns
 can only exist when the return type is already nullable. Use `isNullable()` when you
 need to explicitly distinguish nullable from non-nullable declarations.
 
@@ -368,7 +368,7 @@ need to explicitly distinguish nullable from non-nullable declarations.
 
 **Note on `matchesSig` and nullability:** `matchesSig` operates at JVM signature level
 where `String?` and `String` are indistinguishable. Kotlin does not allow overloading
-by nullability. Therefore `matchesSig` has no nullable awareness — combine it with
+by nullability. Therefore `matchesSig` has no nullable awareness -- combine it with
 `isNullable()` when needed.
 
 ---
@@ -385,7 +385,7 @@ by nullability. Therefore `matchesSig` has no nullable awareness — combine it 
 
 3. **Test class** (one per rule):
    `src/test/java/net/sourceforge/pmd/lang/kotlin/rule/<category>/<RuleName>Test.java`
-   Extends `PmdRuleTst` — the framework auto-discovers the test XML by convention.
+   Extends `PmdRuleTst` -- the framework auto-discovers the test XML by convention.
 
 4. **Test method naming**: Checkstyle enforces `^[a-z][a-zA-Z0-9]*$`.
    Use camelCase even in test methods; underscores are not allowed.
@@ -412,9 +412,9 @@ See the pmd-kotlin documentation for setup instructions.
 
 Always document the Kotlin-idiomatic fix in the rule description.  
 Examples:
-- `str.trim().length == 0` → `str.isBlank()`
-- `sb.append("x" + y)` → `sb.append("x").append(y)` or `buildString { append("x"); append(y) }`
-- `when` with 1–2 branches → `if`/`if-else`
+- `str.trim().length == 0` -> `str.isBlank()`
+- `sb.append("x" + y)` -> `sb.append("x").append(y)` or `buildString { append("x"); append(y) }`
+- `when` with 1-2 branches -> `if`/`if-else`
 
 ### 3.5 `except` clause in XPath
 
@@ -455,7 +455,7 @@ Kotlin's `FastJarHandler` / `LargeDynamicMappedBuffer` throws
 `IllegalArgumentException` when given a `.pom` file (empty / non-ZIP).
 Maven's Surefire and `URLClassLoader` hierarchies can include `.pom` entries.
 
-**Fix location:** `KotlinLanguageProcessor.filterAuxClasspathEntries()` — retains
+**Fix location:** `KotlinLanguageProcessor.filterAuxClasspathEntries()` -- retains
 only entries that are existing directories or `.jar` files; logs `WARN` for anything
 skipped. Applied at all three classpath-source points (string property, URLClassLoader,
 `java.class.path`).
@@ -467,10 +467,10 @@ skipped. Applied at all three classpath-source points (string property, URLClass
 CPD flags structurally similar methods. Use the **template-method pattern** to
 factor out shared call flow into an abstract base class:
 
-- `AbstractKotlinTypeIsFunctionCall` — shared `call()` for `typeIs`/`typeIsExactly`
+- `AbstractKotlinTypeIsFunctionCall` -- shared `call()` for `typeIs`/`typeIsExactly`
 - Subclasses implement `matchesType()` hook (`isSubtypeOf` vs `isTypeEquivalent`)
 
-Avoid dead private static methods that share a name with instance methods —
+Avoid dead private static methods that share a name with instance methods --
 this was a source of false CPD positives.
 
 ---
@@ -487,7 +487,7 @@ NOT on `SimpleIdentifier` itself. `SimpleIdentifier[@Identifier='foo']` always
 returns null because `SimpleIdentifier`'s own direct children are `T-Identifier`
 terminal tokens, not another `SimpleIdentifier`.
 
-| ✅ Correct | ❌ Wrong |
+| [OK] Correct | [X] Wrong |
 |-----------|---------|
 | `PrimaryExpression[@Identifier='foo']` | `SimpleIdentifier[@Identifier='foo']` |
 | `VariableDeclaration/@Identifier` | `SimpleIdentifier/@Identifier` |
@@ -509,7 +509,7 @@ resolve without an explicit aux classpath because the Kotlin compiler includes t
 standard JDK classes automatically.
 
 **Consequence:** You can use `pmd-kotlin:typeIs(...)` and `pmd-kotlin:matchesSig(...)`
-in test cases without any extra configuration — they just work.  
+in test cases without any extra configuration -- they just work.  
 If type analysis were unavailable, the `UnresolvedType` rule would fire as a signal.
 
 ### 8.1 Requirements for typed test cases
@@ -559,14 +559,14 @@ For type resolution to work in a test case CDATA snippet:
 5. **Java static methods on Kotlin-mapped types require fully-qualified names.**
    `kotlin.String` has no companion `valueOf`, so `String.valueOf(i)` does not produce
    a call site in kotlin-type-mapper and `matchesSig` will return false.  
-   Use the fully-qualified `java.lang.String.valueOf(i)` instead — the K1 compiler
+   Use the fully-qualified `java.lang.String.valueOf(i)` instead -- the K1 compiler
    resolves this as a Java interop static call and a call site IS generated.
 
    ```kotlin
-   // Wrong — String maps to kotlin.String; no valueOf companion → no call site
+   // Wrong -- String maps to kotlin.String; no valueOf companion -> no call site
    return String.valueOf(i)
 
-   // Correct — java.lang.String resolves via Java interop → call site generated
+   // Correct -- java.lang.String resolves via Java interop -> call site generated
    return java.lang.String.valueOf(i)
    ```
 
@@ -575,20 +575,46 @@ For type resolution to work in a test case CDATA snippet:
 
 ---
 
-## 9. `pmd-kotlin:typeIs()` — Where It Works and How
+## 9. `pmd-kotlin:typeIs()` -- Where It Works and How
 
-`typeIs(fqcn)` on a node resolves type in this order:
-1. **Node attribute** — checks a `TypeName` attribute if the node has one
-2. **Declarations** at `node.beginLine` — if the line has a `PropertyDeclaration`
-   or similar, its declared type is matched
-3. **Call-site return types** at `node.beginLine` — if no declarations, checks
-   the return type of call sites recorded at that line
+`typeIs(fqcn)` and `typeIsExactly(fqcn)` on a node resolve the type in this priority order:
+
+1. **Node attribute (`TYPE_NAME_KEY`)** -- if `KotlinTypeAnnotationVisitor` has set a type
+   annotation on the node (e.g. `PropertyDeclaration`, `CatchBlock`, `DelegationSpecifier`,
+   `FunctionValueParameter`), that annotation is checked. If it does not match, the function
+   returns `false` immediately; it does NOT fall through to the call-site index. This prevents
+   the RHS initializer of a property from being checked when only the declared type matters
+   (e.g. `val items: List<String> = ArrayList()` must not match `typeIsExactly('ArrayList')`).
+
+2. **Declaration index at `node.beginLine`** -- if the node has no type annotation, the
+   declaration index for that line is consulted. A declaration's `type` and `returnType` fields
+   are checked.
+
+3. **Call-site index at `node.beginLine`** -- checked REGARDLESS of whether step 2 found a
+   declaration. The `declarationsAt()` API uses +/-1 line tolerance, so a function header on
+   the preceding line can be returned as a "declaration" for an expression on the next line.
+   Stopping at step 2 on a non-matching declaration would prevent expression nodes (e.g. a
+   `PostfixUnaryExpression` constructor call inside a `throw`) from being resolved correctly.
 
 **Reliable placement:**
-- On `PropertyDeclaration` → resolves the declared variable type. This is the
-  most reliable pattern: `PropertyDeclaration[pmd-kotlin:typeIs('java.lang.String')]`
-- On `CatchBlock` → resolves the caught exception type
-- On `PostfixUnaryExpression` → resolves the return type of the call at that line
+- On `PropertyDeclaration` -> resolves the declared variable type. Most reliable:
+  `//PropertyDeclaration[pmd-kotlin:typeIs('java.lang.String')]`
+- On `CatchBlock` -> resolves the caught exception type
+- On `DelegationSpecifier` -> resolves the supertype
+- On `PostfixUnaryExpression` (constructor call) -> resolves via call-site return type.
+  Use `typeIsExactly` here because `matchesSig` is polymorphic (subtype-aware), so if exact
+  type checking is needed (e.g. `throw Exception(...)` must not match `throw MyException(...)`),
+  `typeIsExactly` is the correct choice.
+
+**When not to use `typeIs` -- use `@Identifier` name matching instead:**
+- Checking the name of a rethrown variable (`ancestor::CatchBlock/@Identifier`) -- this is
+  variable identity, not type checking.
+- Checking the SUPERTYPE of a class declaration (e.g. `DoNotExtendJavaLangError`):
+  `typeIs` on `DelegationSpecifier` looks up the `@TypeName` attribute (the supertype FQN),
+  but subtype checking then requires the user-defined subclass to be loadable via reflection
+  so BFS can traverse from it up to the target type. User-defined classes are typically NOT
+  on the aux classpath, so BFS fails silently. In this case an explicit name list
+  (`T-Identifier[@Text = 'Error' or @Text = 'AssertionError' or ...]`) is more reliable.
 
 **Connecting a variable declaration to its usage with `let`:**
 
@@ -620,9 +646,9 @@ To detect **any** constructor call on a `PostfixUnaryExpression`:
 ```xpath
 pmd-kotlin:matchesSig('_#<init>(*)')
 ```
-- `_` — wildcard matching any receiver type
-- `<init>` — matches constructor calls
-- `*` — wildcard matching any parameter list
+- `_` -- wildcard matching any receiver type
+- `<init>` -- matches constructor calls
+- `*` -- wildcard matching any parameter list
 
 This is preferred over the heuristic `PrimaryExpression[matches(@Identifier, '^[A-Z]')]`
 (capital letter naming convention) because:
@@ -635,7 +661,7 @@ on all other node types.
 
 ---
 
-## 10a. `AvoidInstantiatingObjectsInLoops` — Loop-Variable Suppression
+## 10a. `AvoidInstantiatingObjectsInLoops` -- Loop-Variable Suppression
 
 The rule suppresses violations when the constructor's arguments directly reference
 the for-loop's iteration variable(s), i.e. the object is different each iteration.
@@ -652,11 +678,11 @@ let $loopVars := (
 `ancestor::ForStatement` returns ALL enclosing for-loops, so nested loops
 contribute all their loop vars (e.g. `(dir, achievementName)`).
 
-### Checking for loop-var use — use `.//ValueArguments`, NOT `PostfixUnarySuffix/CallSuffix/ValueArguments`
+### Checking for loop-var use -- use `.//ValueArguments`, NOT `PostfixUnarySuffix/CallSuffix/ValueArguments`
 
 **Key finding:** for a regular constructor call `File(dir, "x")`, the args live under
 `PostfixUnarySuffix/CallSuffix/ValueArguments`. However, for an **anonymous class
-delegation** — `object : FileObserver(dir, CLOSE_WRITE)` — the args live under
+delegation** -- `object : FileObserver(dir, CLOSE_WRITE)` -- the args live under
 `ObjectLiteral/DelegationSpecifiers/.../ConstructorInvocation/ValueArguments`, which
 is **not** under a `PostfixUnarySuffix`. Using a narrow path misses this case.
 
@@ -667,8 +693,8 @@ not(.//ValueArguments//PrimaryExpression[@Identifier = $loopVars])
 ```
 
 This covers both patterns:
-- `File(dir, "x")` → `PostfixUnarySuffix/CallSuffix/ValueArguments`
-- `object : SomeClass(dir)` → `DelegationSpecifiers/.../ConstructorInvocation/ValueArguments`
+- `File(dir, "x")` -> `PostfixUnarySuffix/CallSuffix/ValueArguments`
+- `object : SomeClass(dir)` -> `DelegationSpecifiers/.../ConstructorInvocation/ValueArguments`
 
 Also keep the constructor search scoped to the initializer expression, not nested method
 bodies inside anonymous objects. For `val watcher = object : FileWatcher(dir) { ... }`,
@@ -696,7 +722,7 @@ The rule uses structural detection (no type analysis needed):
 ```
 
 **Known behaviour:**
-- `not(.//ForStatement)` correctly ignores outer loops when nested — only the
+- `not(.//ForStatement)` correctly ignores outer loops when nested -- only the
   innermost simple loop is checked
 - Transform patterns (`dst[i] = src[i] * 2`) ARE flagged: the RHS still contains
   `PostfixUnarySuffix/IndexingSuffix` for `src[i]`
@@ -704,14 +730,14 @@ The rule uses structural detection (no type analysis needed):
   `DirectlyAssignableExpression/AssignableSuffix/IndexingSuffix` matches the second
   index `[j]`
 
-Both of the above are accepted rule behaviour — the developer should use `copyInto`
+Both of the above are accepted rule behaviour -- the developer should use `copyInto`
 or functional alternatives; suppress with `// NOPMD` where intentional.
 
 
 
 ---
 
-## 13. Design Rules — Boolean and If Patterns
+## 13. Design Rules -- Boolean and If Patterns
 
 ### 13.1 `SimplifyBooleanExpressions`
 
@@ -725,15 +751,15 @@ produce too many false positives to be useful.
 **Identity boolean conjunctions/disjunctions** (Kotlin-specific):
 
 ```
-Conjunction          ← x && true / true && x
-  Equality           ← one operand
+Conjunction          <- x && true / true && x
+  Equality           <- one operand
   T-CONJ
-  Equality           ← other operand; nodeText = "true"
+  Equality           <- other operand; nodeText = "true"
 
-Disjunction          ← x || false / false || x
-  Conjunction        ← one operand
+Disjunction          <- x || false / false || x
+  Conjunction        <- one operand
   T-DISJ
-  Conjunction        ← other operand; nodeText = "false"
+  Conjunction        <- other operand; nodeText = "false"
 ```
 
 `T-CONJ`/`T-DISJ` presence distinguishes real two-operand nodes from single-operand wrapper nodes
@@ -747,7 +773,7 @@ Disjunction          ← x || false / false || x
 //Disjunction[T-DISJ and Conjunction[pmd-kotlin:nodeText() = 'false']]
 ```
 
-`x && false` and `x || true` are intentionally excluded — they change semantics (absorbing element).
+`x && false` and `x || true` are intentionally excluded -- they change semantics (absorbing element).
 
 ### 13.2 `SimplifyBooleanReturns`
 
@@ -757,10 +783,10 @@ Matches `if/else` or `when` expressions where both branches yield a bare boolean
 
 ```
 IfExpression
-  ControlStructureBody [1st — then]
+  ControlStructureBody [1st -- then]
     Block or Statement containing JumpExpression[T-RETURN]
   T-ELSE
-  ControlStructureBody [2nd — else]
+  ControlStructureBody [2nd -- else]
     Block or Statement containing JumpExpression[T-RETURN]
 ```
 
@@ -777,8 +803,8 @@ and `val x = if (cond) true else false`. Same `IfExpression` shape but branches 
 
 ```
 WhenExpression
-  WhenEntry[1]  ← condition branch (no T-ELSE): ControlStructureBody/Statement/Expression = "true"/"false"
-  WhenEntry[2]  ← else branch (T-ELSE):          ControlStructureBody/Statement/Expression = "true"/"false"
+  WhenEntry[1]  <- condition branch (no T-ELSE): ControlStructureBody/Statement/Expression = "true"/"false"
+  WhenEntry[2]  <- else branch (T-ELSE):          ControlStructureBody/Statement/Expression = "true"/"false"
 ```
 
 Constrained to exactly `count(WhenEntry) = 2` (one condition + one else). Multi-branch `when`
@@ -796,7 +822,7 @@ IfExpression[not(T-ELSE)]
       Expression
         ...
         PrimaryExpression
-          IfExpression[not(T-ELSE)]   ← violation reported here (inner if)
+          IfExpression[not(T-ELSE)]   <- violation reported here (inner if)
 ```
 
 The path `Statement/Expression//PrimaryExpression/IfExpression` selects expression-statement ifs,
@@ -833,7 +859,7 @@ AssignableExpression[pmd-kotlin:typeIs('java.lang.String')]
 
 Implementation: `typeIs()` would walk up from `AssignableExpression` to find the
 corresponding `PropertyDeclaration` and resolve its type.
-Java XPath rules do not have this either — Java class-based rules use the type API directly.
+Java XPath rules do not have this either -- Java class-based rules use the type API directly.
 
 **Defer until** a second rule needs the same `let $lhsName` workaround.
 

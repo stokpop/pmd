@@ -27,18 +27,29 @@ abstract class AbstractKotlinTypeIsFunctionCall implements XPathFunctionDefiniti
         String typeName = (String) arguments[0];
         KotlinTypeAnalysisContext ctx = KotlinTypeAnalysisContextHolder.get();
 
-        if (contextNode instanceof KotlinNode
-                && matchesNodeAttribute((KotlinNode) contextNode, typeName, ctx)) {
-            return true;
+        if (contextNode instanceof KotlinNode) {
+            KotlinNode kn = (KotlinNode) contextNode;
+            if (matchesNodeAttribute(kn, typeName, ctx)) {
+                return true;
+            }
+            // If the node has an explicit type annotation (set by KotlinTypeAnnotationVisitor)
+            // that didn't match, trust the annotation and do not fall through to the call site
+            // index. This prevents RHS constructor calls from matching when the declared type
+            // on the same line is a different (e.g. interface) type.
+            if (kn.getTypeName() != null || kn.getReturnTypeName() != null) {
+                return false;
+            }
         }
 
+        // No type annotation on the node itself -- look up the declaration/call-site index.
+        // Always try both: declarationsAt() uses +/-1 line tolerance and may surface an
+        // adjacent declaration (e.g. a function header) that does not match, so we must
+        // not short-circuit on a miss and must still check call sites.
         String absPath = contextNode.getTextDocument().getFileId().getAbsolutePath();
         int line = contextNode.getBeginLine();
         List<DeclarationAst> decls = ctx.declarationsAt(absPath, line);
-        if (!decls.isEmpty()) {
-            return matchesAnyDeclaration(decls, typeName, ctx);
-        }
-        return matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
+        return matchesAnyDeclaration(decls, typeName, ctx)
+                || matchesAnyCallSite(ctx.callSitesAt(absPath, line), typeName, ctx);
     }
 
     protected abstract boolean matchesNodeAttribute(KotlinNode node, String typeName, KotlinTypeAnalysisContext ctx);

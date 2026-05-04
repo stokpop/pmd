@@ -233,7 +233,7 @@ class KotlinTypeIsFunctionTest {
 
     @Test
     void typeIsMatchesInferredTypeSubtypeViaSourceHierarchy() {
-        // "val myValue = Simple("Hello")" — type is INFERRED (no explicit annotation).
+        // "val myValue = Simple("Hello")" -- type is INFERRED (no explicit annotation).
         // Simple is defined in the same file and implements Serializable.
         // The source hierarchy (from K1 analysis) should make typeIs work without compiled classes.
         File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/InferredTypeSubtype.kt");
@@ -332,6 +332,37 @@ class KotlinTypeIsFunctionTest {
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(!report.getViolations().isEmpty(),
                 "Expected DelegationSpecifier[@TypeName='java.io.Serializable'] to match");
+    }
+
+    @Test
+    void typeIsExactlyMatchesConstructorCallOnPostfixUnaryExpression() {
+        // typeIsExactly on a throw's PostfixUnaryExpression (constructor call) must fire
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ConstructorCallTypeCheck.kt");
+        Report report = runXPath(
+                "//JumpExpression[T-THROW and .//PostfixUnaryExpression["
+                        + "pmd-kotlin:typeIsExactly('java.lang.Exception')]]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 12),
+                "Expected violation at line 12 (throw Exception)");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 16),
+                "Line 16 (throw RuntimeException) must NOT match typeIsExactly('java.lang.Exception')");
+        assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 21),
+                "Line 21 (throw IllegalArgumentException) must NOT match typeIsExactly('java.lang.Exception')");
+    }
+
+    @Test
+    void typeIsExactlyDoesNotMatchInterfaceTypedPropertyWithConcreteInitializer() {
+        // PropertyDeclaration val items: List<String> = ArrayList()
+        // typeIsExactly('java.util.ArrayList') must NOT fire -- declared type is List, not ArrayList
+        File kotlinFile = getResource(TYPE_IS_RESOURCE_DIR + "/ConstructorCallTypeCheck.kt");
+        Report report = runXPath(
+                "//PropertyDeclaration[pmd-kotlin:typeIsExactly('java.util.ArrayList')]",
+                kotlinFile);
+        assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
+        assertTrue(report.getViolations().isEmpty(),
+                "No PropertyDeclaration should match typeIsExactly('java.util.ArrayList') "
+                        + "when declared type is List interface");
     }
 
     private Report runXPath(String xpathExpr, File kotlinFile) {
