@@ -308,6 +308,132 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="AvoidRethrowingException"
+          language="kotlin"
+          since="7.25.0"
+          message="Catch block only rethrows the caught exception; remove the try/catch or handle the exception."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidrethrowingexception">
+        <description>
+            A catch block that does nothing but rethrow the caught exception is pointless. Remove the
+            try/catch entirely, or handle the exception in a meaningful way (logging, wrapping, recovery).
+        </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//CatchBlock[
+    count(Block/Statements/Statement) = 1
+    and Block//JumpExpression[
+        T-THROW
+        and .//PrimaryExpression[
+            @Identifier = ancestor::CatchBlock/@Identifier
+            and not(ancestor::ValueArguments)
+        ]
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: catch that only rethrows adds no value
+fun bad() {
+    try {
+        risky()
+    } catch (e: IllegalStateException) {
+        throw e
+    }
+}
+
+// ok: catch that logs before rethrowing
+fun good() {
+    try {
+        risky()
+    } catch (e: IllegalStateException) {
+        logger.error("operation failed", e)
+        throw e
+    }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="AvoidThrowingNullPointerException"
+          language="kotlin"
+          since="7.25.0"
+          message="Avoid throwing NullPointerException; use requireNotNull() or checkNotNull() instead."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidthrowingnullpointerexception">
+        <description>
+            Explicitly throwing NullPointerException is misleading — callers and tools expect NPE to
+            indicate an unintentional null dereference, not a deliberate contract violation.
+            Use requireNotNull(), checkNotNull(), or error() to signal intentional null checks with
+            a clear message.
+        </description>
+        <priority>1</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//JumpExpression[
+    T-THROW
+    and .//PostfixUnaryExpression[
+        PrimaryExpression/@Identifier = 'NullPointerException'
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: explicitly throwing NPE is confusing
+fun bad(value: String?) {
+    if (value == null) throw NullPointerException("value must not be null")
+}
+
+// ok: use Kotlin idiomatic null checks
+fun good(value: String?) {
+    requireNotNull(value) { "value must not be null" }
+}
+        ]]></example>
+    </rule>
+
+    <rule name="AvoidThrowingRawExceptionTypes"
+          language="kotlin"
+          since="7.25.0"
+          message="Avoid throwing raw exception types; use a more specific exception subclass."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidthrowingrawexceptiontypes">
+        <description>
+            Throwing generic root types (Throwable, Error, Exception, RuntimeException) loses semantic
+            information. Callers cannot catch the specific condition without catching everything.
+            Use a specific subclass that communicates the failure reason, or define a custom exception.
+        </description>
+        <priority>1</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//JumpExpression[
+    T-THROW
+    and .//PostfixUnaryExpression[
+        PrimaryExpression/@Identifier = ('Throwable', 'Exception', 'RuntimeException', 'Error')
+    ]
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: raw exception types carry no semantic information
+fun bad(input: String) {
+    if (input.isEmpty()) throw Exception("input is empty")
+    if (input.length > 100) throw RuntimeException("too long")
+}
+
+// ok: specific exception type communicates the failure reason
+fun good(input: String) {
+    if (input.isEmpty()) throw IllegalArgumentException("input is empty")
+    if (input.length > 100) throw IllegalArgumentException("input exceeds 100 characters")
+}
+        ]]></example>
+    </rule>
+
     <rule name="DoNotExtendJavaLangError"
           language="kotlin"
           since="7.x"
