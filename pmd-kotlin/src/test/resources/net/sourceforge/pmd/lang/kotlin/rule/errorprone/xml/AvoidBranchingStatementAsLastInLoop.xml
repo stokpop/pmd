@@ -144,4 +144,36 @@ class Foo {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>continue as elvis right-hand side in for loop is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Foo {
+    fun good(items: List<String?>) {
+        for (item in items) {
+            val value = item ?: continue
+            process(value)
+        }
+    }
+    private fun process(s: String) {}
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>break as elvis right-hand side in while loop is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Foo {
+    fun good(items: Iterator<String?>) {
+        while (items.hasNext()) {
+            val value = items.next() ?: break
+            process(value)
+        }
+    }
+    private fun process(s: String) {}
+}
+        ]]></code>
+    </test-code>
+
 </test-data>

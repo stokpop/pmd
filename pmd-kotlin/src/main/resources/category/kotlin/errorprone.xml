@@ -33,6 +33,10 @@ Rules to detect constructs that are either broken, extremely confusing or prone 
     and not(ancestor::WhenExpression[
         ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
     ])
+    and not(ancestor::ElvisExpression[
+        Elvis
+        and (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    ])
     and not(ancestor::LambdaLiteral[
         ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
     ])
