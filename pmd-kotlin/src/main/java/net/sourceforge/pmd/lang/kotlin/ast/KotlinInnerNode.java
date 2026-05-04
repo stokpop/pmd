@@ -121,7 +121,7 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
     /**
      * This prevents optional attributes like {@code @TypeName} and
      * {@code @ReturnTypeName} from appearing on every node in the PMD Designer
-     * when they have no meaningful value — consistent with how {@code @Text}
+     * when they have no meaningful value -- consistent with how {@code @Text}
      * is only present on terminal (T-prefixed) nodes.
      */
     @Override

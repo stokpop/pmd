@@ -24,7 +24,7 @@ import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
  * pmd-kotlin:insideLoop()
  * }</pre>
  *
- * <p>Example — flag a property declaration of any type created inside a loop:
+ * <p>Example -- flag a property declaration of any type created inside a loop:
  * <pre>{@code
  * //PropertyDeclaration[pmd-kotlin:insideLoop()]
  * }</pre>

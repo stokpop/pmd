@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
 
     <test-code>
-        <description>string += in for loop, empty string init — violation</description>
+        <description>string += in for loop, empty string init -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>4</expected-linenumbers>
         <code><![CDATA[
@@ -20,7 +20,7 @@ fun bad(items: List<String>): String {
     </test-code>
 
     <test-code>
-        <description>string += in while loop, non-empty string init — violation</description>
+        <description>string += in while loop, non-empty string init -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>5</expected-linenumbers>
         <code><![CDATA[
@@ -37,7 +37,7 @@ fun bad(n: Int): String {
     </test-code>
 
     <test-code>
-        <description>string += with explicit String type — violation</description>
+        <description>string += with explicit String type -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>4</expected-linenumbers>
         <code><![CDATA[
@@ -52,7 +52,7 @@ fun bad(items: List<String>): String {
     </test-code>
 
     <test-code>
-        <description>string += in do-while loop — violation</description>
+        <description>string += in do-while loop -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>5</expected-linenumbers>
         <code><![CDATA[
@@ -69,7 +69,7 @@ fun bad(n: Int): String {
     </test-code>
 
     <test-code>
-        <description>StringBuilder.append in loop — no violation</description>
+        <description>StringBuilder.append in loop -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(items: List<String>): String {
@@ -83,7 +83,7 @@ fun good(items: List<String>): String {
     </test-code>
 
     <test-code>
-        <description>joinToString — no violation</description>
+        <description>joinToString -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(items: List<String>): String {
@@ -93,7 +93,7 @@ fun good(items: List<String>): String {
     </test-code>
 
     <test-code>
-        <description>int += in for loop — no violation (not a string)</description>
+        <description>int += in for loop -- no violation (not a string)</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(items: List<Int>): Int {
@@ -107,7 +107,7 @@ fun good(items: List<Int>): Int {
     </test-code>
 
     <test-code>
-        <description>string concatenation outside loop — no violation</description>
+        <description>string concatenation outside loop -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(a: String, b: String): String {

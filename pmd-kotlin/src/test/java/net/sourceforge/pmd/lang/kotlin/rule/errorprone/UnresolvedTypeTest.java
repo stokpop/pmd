@@ -9,5 +9,5 @@ import net.sourceforge.pmd.test.PmdRuleTst;
 class UnresolvedTypeTest extends PmdRuleTst {
     // no additional unit tests
     // Full positive coverage (unresolved imports triggering violations) requires
-    // a kotlin-type-mapper context — see KotlinHasUnresolvedReferenceFunctionTest.
+    // a kotlin-type-mapper context -- see KotlinHasUnresolvedReferenceFunctionTest.
 }

@@ -128,9 +128,9 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
      *
      * <p>Resolution order:
      * <ol>
-     *   <li>String property — set when {@code --aux-classpath} is passed on the command line.</li>
-     *   <li>URLClassLoader hierarchy — how the PMD Designer propagates the auxiliary classpath.</li>
-     *   <li>{@code java.class.path} system property — Maven Surefire puts all test dependencies here.</li>
+     *   <li>String property -- set when {@code --aux-classpath} is passed on the command line.</li>
+     *   <li>URLClassLoader hierarchy -- how the PMD Designer propagates the auxiliary classpath.</li>
+     *   <li>{@code java.class.path} system property -- Maven Surefire puts all test dependencies here.</li>
      * </ol>
      */
     private List<File> getAuxClasspathEntries() {
@@ -148,7 +148,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             LOG.debug("kotlin-type-mapper aux classpath from string property ({} entries)", entries.size());
             return filterAuxClasspathEntries(entries, "aux-classpath property");
         }
-        // 2. URLClassLoader hierarchy — PMD Designer (and CLI via ClasspathClassLoader) sets this.
+        // 2. URLClassLoader hierarchy -- PMD Designer (and CLI via ClasspathClassLoader) sets this.
         ClassLoader cl = jvmBundle.getAnalysisClassLoader();
         List<File> urlEntries = new ArrayList<>();
         while (cl != null) {
@@ -169,7 +169,7 @@ public class KotlinLanguageProcessor extends BatchLanguageProcessor<LanguageProp
             LOG.debug("kotlin-type-mapper aux classpath from URLClassLoader hierarchy ({} entries)", urlEntries.size());
             return filterAuxClasspathEntries(urlEntries, "analysis classloader");
         }
-        // 3. java.class.path system property — Maven Surefire puts all test dependencies here.
+        // 3. java.class.path system property -- Maven Surefire puts all test dependencies here.
         String javaClassPath = System.getProperty("java.class.path");
         if (javaClassPath != null && !javaClassPath.isEmpty()) {
             List<File> entries = new ArrayList<>();

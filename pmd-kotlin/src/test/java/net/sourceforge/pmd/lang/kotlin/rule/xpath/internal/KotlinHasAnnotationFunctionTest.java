@@ -126,7 +126,7 @@ class KotlinHasAnnotationFunctionTest {
                 "//ClassDeclaration[pmd-kotlin:hasAnnotation('Service')]",
                 getResource(RESOURCE_DIR + "/AnnotatedEntities.kt"));
         assertTrue(report.getProcessingErrors().isEmpty());
-        // FqnAnnotatedService is declared around lines 27-28 — verify at least one match exists
+        // FqnAnnotatedService is declared around lines 27-28 -- verify at least one match exists
         assertFalse(report.getViolations().isEmpty(),
                 "Expected hasAnnotation('Service') to match @org.springframework.stereotype.Service on FqnAnnotatedService");
         // UserEntity (@Entity, not @Service) must not appear in results

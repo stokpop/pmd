@@ -27,14 +27,14 @@ import nl.stokpop.typemapper.model.TypedAst;
  *
  * <ul>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code PropertyDeclaration} nodes (property type)</li>
- *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code ClassParameter} nodes — primary constructor
+ *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code ClassParameter} nodes -- primary constructor
  *       {@code val}/{@code var} params (e.g. {@code class Foo(val name: String)})</li>
  *   <li>{@link KotlinNode#RETURN_TYPE_KEY} on {@code FunctionDeclaration} nodes (return type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code FunctionValueParameter} nodes (parameter type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code CatchBlock} nodes (caught exception type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code ForStatement} nodes (loop variable type)</li>
  *   <li>{@link KotlinNode#TYPE_NAME_KEY} on {@code UnescapedAnnotation} <em>and</em>
- *       {@code SingleAnnotation} nodes (annotation FQN — set on both for convenience)</li>
+ *       {@code SingleAnnotation} nodes (annotation FQN -- set on both for convenience)</li>
  *   <li>{@link KotlinNode#ANNOTATION_NAMES_KEY} on declaration nodes (comma-joined FQN list)</li>
  * </ul>
  *
@@ -50,7 +50,7 @@ public final class KotlinTypeAnnotationVisitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(KotlinTypeAnnotationVisitor.class);
 
-    /** Map from base filename (e.g. "Foo.kt") → per-line declarations index. */
+    /** Map from base filename (e.g. "Foo.kt") -> per-line declarations index. */
     private final Map<String, Map<Integer, List<DeclarationAst>>> byFilename;
 
     public KotlinTypeAnnotationVisitor(TypedAst typedAst) {
@@ -340,7 +340,7 @@ public final class KotlinTypeAnnotationVisitor {
         if (annotations.isEmpty()) {
             return;
         }
-        // Build a simple-name → FQN lookup (last match wins; duplicates are rare)
+        // Build a simple-name -> FQN lookup (last match wins; duplicates are rare)
         Map<String, String> simpleToFqn = new HashMap<>();
         StringBuilder fqnList = new StringBuilder();
         for (AnnotationAst ann : annotations) {

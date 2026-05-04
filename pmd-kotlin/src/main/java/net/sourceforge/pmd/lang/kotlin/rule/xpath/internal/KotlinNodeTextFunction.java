@@ -13,14 +13,14 @@ import net.sourceforge.pmd.lang.rule.xpath.impl.XPathFunctionException;
  * XPath function {@code pmd-kotlin:nodeText()}.
  *
  * <p>Returns the raw source text of the context node as a string.
- * Useful in XPath predicates that need to inspect literal argument values —
+ * Useful in XPath predicates that need to inspect literal argument values --
  * for example, checking whether a string argument is exactly one character,
  * or whether a numeric argument is {@code 0}, {@code 1}, or {@code 10}.
  *
  * <p>Uses {@link net.sourceforge.pmd.lang.document.TextDocument#sliceOriginalText}
  * to read the exact source text at the node's position.
  *
- * <p>Example — flag {@code StringBuilder.append("x")} where the argument is a
+ * <p>Example -- flag {@code StringBuilder.append("x")} where the argument is a
  * single-character string literal (context node is the {@code ValueArgument}):
  * <pre>{@code
  * PostfixUnarySuffix/CallSuffix/ValueArguments/ValueArgument[

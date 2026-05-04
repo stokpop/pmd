@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
 
     <test-code>
-        <description>simple array copy loop — violation</description>
+        <description>simple array copy loop -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>3</expected-linenumbers>
         <code><![CDATA[
@@ -18,7 +18,7 @@ fun bad(src: IntArray, dst: IntArray) {
     </test-code>
 
     <test-code>
-        <description>array copy with explicit range — violation</description>
+        <description>array copy with explicit range -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>3</expected-linenumbers>
         <code><![CDATA[
@@ -31,7 +31,7 @@ fun bad(src: IntArray, dst: IntArray, n: Int) {
     </test-code>
 
     <test-code>
-        <description>use copyInto — no violation</description>
+        <description>use copyInto -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(src: IntArray, dst: IntArray) {
@@ -41,7 +41,7 @@ fun good(src: IntArray, dst: IntArray) {
     </test-code>
 
     <test-code>
-        <description>loop body with more than one statement — no violation</description>
+        <description>loop body with more than one statement -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 fun good(src: IntArray, dst: IntArray, flags: BooleanArray) {
@@ -54,7 +54,7 @@ fun good(src: IntArray, dst: IntArray, flags: BooleanArray) {
     </test-code>
 
     <test-code>
-        <description>transform during copy — violation (rule flags any indexed assignment in a simple loop)</description>
+        <description>transform during copy -- violation (rule flags any indexed assignment in a simple loop)</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>3</expected-linenumbers>
         <code><![CDATA[
@@ -67,7 +67,7 @@ fun bad(src: IntArray, dst: IntArray) {
     </test-code>
 
     <test-code>
-        <description>nested loop — inner simple copy loop is flagged</description>
+        <description>nested loop -- inner simple copy loop is flagged</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>4</expected-linenumbers>
         <code><![CDATA[

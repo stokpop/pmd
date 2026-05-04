@@ -11,8 +11,8 @@ import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
  *
  * <p>Returns {@code true} when the context node's declared type (for property/variable
  * declarations) or return type (for function declarations) is <em>exactly</em> equivalent
- * to {@code typeName} — no subtype checking is performed.
- * Both Java FQCNs and Kotlin FQNs are accepted (e.g. {@code java.lang.String} ↔
+ * to {@code typeName} -- no subtype checking is performed.
+ * Both Java FQCNs and Kotlin FQNs are accepted (e.g. {@code java.lang.String} <->
  * {@code kotlin.String}).
  *
  * <p>Use {@code pmd-kotlin:typeIs(typeName)} when subtype matches should also be included.

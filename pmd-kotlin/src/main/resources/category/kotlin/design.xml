@@ -24,7 +24,7 @@ Rules that help you discover design issues.
 
             ```kotlin
             if (x) {
-                if (y) { … }     // violation: merge to: if (x &amp;&amp; y) { … }
+                if (y) { ... }     // violation: merge to: if (x &amp;&amp; y) { ... }
             }
             ```
 
@@ -82,7 +82,7 @@ class Foo {
             Avoid redundant boolean identity expressions using `&amp;&amp;` or `||` with a literal:
             `x &amp;&amp; true` and `x || false` are no-ops and can be simplified to just `x`.
 
-            Note: `x == true` and similar equality comparisons are intentionally not flagged —
+            Note: `x == true` and similar equality comparisons are intentionally not flagged --
             in Kotlin these are idiomatic for nullable `Boolean?` values.
 
             Kotlin equivalent of Java rule: category/java/design.xml/SimplifyBooleanExpressions
@@ -129,19 +129,19 @@ class Bar {
             context: return, assignment, expression body, or function argument.
 
             ```kotlin
-            // violation — return form:
+            // violation -- return form:
             if (bar == x) return true else return false
             // simplify to:
             return bar == x
 
-            // violation — expression/assignment form (Kotlin-specific):
+            // violation -- expression/assignment form (Kotlin-specific):
             fun isEqual(bar: Int, x: Int) = if (bar == x) true else false
             val result = if (bar == x) true else false
             // simplify to:
             fun isEqual(bar: Int, x: Int) = bar == x
             val result = bar == x
 
-            // violation — when form (Kotlin-specific):
+            // violation -- when form (Kotlin-specific):
             val result = when { bar == x -> true; else -> false }
             // simplify to:
             val result = bar == x
@@ -208,7 +208,7 @@ class Bar {
         </properties>
         <example><![CDATA[
 class Foo {
-    // violation — return form: replace with return bar == x
+    // violation -- return form: replace with return bar == x
     fun isBarEqualTo(bar: Int, x: Int): Boolean {
         if (bar == x) {
             return true
@@ -217,16 +217,16 @@ class Foo {
         }
     }
 
-    // violation — expression body: replace with fun isBarSame(bar: Int, x: Int) = bar == x
+    // violation -- expression body: replace with fun isBarSame(bar: Int, x: Int) = bar == x
     fun isBarSame(bar: Int, x: Int): Boolean = if (bar == x) true else false
 
-    // violation — assignment: replace with val result = bar == x
+    // violation -- assignment: replace with val result = bar == x
     fun compute(bar: Int, x: Int): Boolean {
         val result = if (bar == x) true else false
         return result
     }
 
-    // violation — when form: replace with return bar == x
+    // violation -- when form: replace with return bar == x
     fun isBarSameWhen(bar: Int, x: Int): Boolean = when {
         bar == x -> true
         else -> false

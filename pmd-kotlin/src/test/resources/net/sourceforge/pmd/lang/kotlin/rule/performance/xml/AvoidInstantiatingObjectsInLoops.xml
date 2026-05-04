@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://pmd.sourceforge.net/rule-tests http://pmd.sourceforge.net/rule-tests_1_0_0.xsd">
 
     <test-code>
-        <description>same Person created every for-loop iteration — violation</description>
+        <description>same Person created every for-loop iteration -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
@@ -23,7 +23,7 @@ fun bad(name: String, amounts: List<java.math.BigDecimal>): List<BankTransaction
     </test-code>
 
     <test-code>
-        <description>same Person and same BankTransaction created every iteration — two violations</description>
+        <description>same Person and same BankTransaction created every iteration -- two violations</description>
         <expected-problems>2</expected-problems>
         <expected-linenumbers>6,7</expected-linenumbers>
         <code><![CDATA[
@@ -42,7 +42,7 @@ fun bad(name: String, amounts: List<java.math.BigDecimal>): List<String> {
     </test-code>
 
     <test-code>
-        <description>same Person created every while-loop iteration — violation</description>
+        <description>same Person created every while-loop iteration -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
@@ -60,7 +60,7 @@ fun bad(name: String, amounts: ArrayDeque<java.math.BigDecimal>): List<BankTrans
     </test-code>
 
     <test-code>
-        <description>same Person created every do-while iteration — violation</description>
+        <description>same Person created every do-while iteration -- violation</description>
         <expected-problems>1</expected-problems>
         <expected-linenumbers>6</expected-linenumbers>
         <code><![CDATA[
@@ -78,7 +78,7 @@ fun bad(name: String, amounts: ArrayDeque<java.math.BigDecimal>): List<BankTrans
     </test-code>
 
     <test-code>
-        <description>Person created outside loop — no violation</description>
+        <description>Person created outside loop -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Person(val name: String)
@@ -95,7 +95,7 @@ fun good(name: String, amounts: List<java.math.BigDecimal>): List<BankTransactio
     </test-code>
 
     <test-code>
-        <description>lowercase function call inside loop — no violation (not a constructor)</description>
+        <description>lowercase function call inside loop -- no violation (not a constructor)</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Person(val name: String)
@@ -111,7 +111,7 @@ fun good(names: List<String>): List<Person> {
     </test-code>
 
     <test-code>
-        <description>BankTransaction uses loop variable amount — no violation</description>
+        <description>BankTransaction uses loop variable amount -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Person(val name: String)
@@ -129,7 +129,7 @@ fun good(name: String, amounts: List<java.math.BigDecimal>): List<BankTransactio
     </test-code>
 
     <test-code>
-        <description>BankTransaction uses destructured loop variables — no violation</description>
+        <description>BankTransaction uses destructured loop variables -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Person(val name: String)
@@ -145,7 +145,7 @@ fun good(entries: List<Pair<Person, java.math.BigDecimal>>): List<BankTransactio
         ]]></code>
     </test-code>
     <test-code>
-        <description>java.io.File uses loop variable dir — no violation</description>
+        <description>java.io.File uses loop variable dir -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 import java.io.File
@@ -159,21 +159,21 @@ fun good(watchDirs: List<File>) {
     </test-code>
 
     <test-code>
-        <description>constructor arg is a derived loop-body local (1-level) — no violation</description>
+        <description>constructor arg is a derived loop-body local (1-level) -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Widget(val label: String)
 fun good(items: List<String>) {
     for (i in items.indices) {
         val elem = items[i]       // derived from loop var i
-        val w = Widget(elem)      // elem is derived — not a repeated identical object
+        val w = Widget(elem)      // elem is derived -- not a repeated identical object
     }
 }
         ]]></code>
     </test-code>
 
     <test-code>
-        <description>constructor arg method-call on derived local (1-level) — no violation</description>
+        <description>constructor arg method-call on derived local (1-level) -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class Report(val title: String)
@@ -187,7 +187,7 @@ fun good(sections: Array<String>) {
     </test-code>
 
     <test-code>
-        <description>anonymous class delegation uses loop var — no violation</description>
+        <description>anonymous class delegation uses loop var -- no violation</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 import java.io.File

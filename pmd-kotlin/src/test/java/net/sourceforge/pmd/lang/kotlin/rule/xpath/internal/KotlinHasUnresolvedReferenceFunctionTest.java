@@ -51,7 +51,7 @@ class KotlinHasUnresolvedReferenceFunctionTest {
                 getResource(RESOURCE_DIR + "/UnresolvedImports.kt"));
 
         assertTrue(report.getProcessingErrors().isEmpty(), "Unexpected processing errors");
-        // lines 7 and 8 import com.example.external — not in source tree, unresolved
+        // lines 7 and 8 import com.example.external -- not in source tree, unresolved
         assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 7),
                 "Expected unresolved import at line 7 (com.example.external.MissingClass)");
         assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 8),
@@ -60,7 +60,7 @@ class KotlinHasUnresolvedReferenceFunctionTest {
 
     @Test
     void resolvedImportDoesNotFire() {
-        // A file with no external imports has no unresolved references — rule must not fire.
+        // A file with no external imports has no unresolved references -- rule must not fire.
         Report report = runXPath(
                 "//ImportHeader[pmd-kotlin:hasUnresolvedReference()]",
                 getResource(RESOURCE_DIR + "/NoImports.kt"));

@@ -34,10 +34,10 @@ public final class KotlinTypeAnalysisContext {
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
             Collections.emptyMap());
 
-    /** Map from absolute file path → line → list of call sites on that line. */
+    /** Map from absolute file path -> line -> list of call sites on that line. */
     private final Map<String, Map<Integer, List<CallSiteAst>>> callIndex;
 
-    /** Map from absolute file path → line → list of declarations starting on that line. */
+    /** Map from absolute file path -> line -> list of declarations starting on that line. */
     private final Map<String, Map<Integer, List<DeclarationAst>>> declIndex;
 
     /**
@@ -47,7 +47,7 @@ public final class KotlinTypeAnalysisContext {
      */
     private final Map<String, List<String>> typeHierarchy;
 
-    /** Map from absolute file path → line → list of unresolved references on that line. */
+    /** Map from absolute file path -> line -> list of unresolved references on that line. */
     private final Map<String, Map<Integer, List<UnresolvedReferenceAst>>> unresolvedIndex;
 
     private KotlinTypeAnalysisContext(
@@ -109,7 +109,7 @@ public final class KotlinTypeAnalysisContext {
 
     /**
      * Returns call sites recorded at the given file and line.
-     * If the exact line has no entries, also checks line ± 1 to tolerate minor
+     * If the exact line has no entries, also checks line +/- 1 to tolerate minor
      * line-number differences between PMD's ANTLR parser and kotlin-type-mapper's PSI.
      */
     public List<CallSiteAst> callSitesAt(String absFilePath, int line) {
@@ -136,7 +136,7 @@ public final class KotlinTypeAnalysisContext {
         if (byLine == null) {
             return Collections.emptyList();
         }
-        // Single-line: exact match with ±1 tolerance for PSI/ANTLR offset differences
+        // Single-line: exact match with +/-1 tolerance for PSI/ANTLR offset differences
         if (beginLine == endLine) {
             List<CallSiteAst> exact = byLine.get(beginLine);
             if (exact != null && !exact.isEmpty()) {
@@ -166,7 +166,7 @@ public final class KotlinTypeAnalysisContext {
 
     /**
      * Returns declarations recorded at the given file and line.
-     * Also checks line ± 1 as a fallback.
+     * Also checks line +/- 1 as a fallback.
      */
     public List<DeclarationAst> declarationsAt(String absFilePath, int line) {
         Map<Integer, List<DeclarationAst>> byLine = declIndex.get(absFilePath);
@@ -198,7 +198,7 @@ public final class KotlinTypeAnalysisContext {
 
     /**
      * Returns unresolved references recorded at the given file and line.
-     * Also checks line ± 1 as a fallback.
+     * Also checks line +/- 1 as a fallback.
      */
     public List<UnresolvedReferenceAst> unresolvedReferencesAt(String absFilePath, int line) {
         Map<Integer, List<UnresolvedReferenceAst>> byLine = unresolvedIndex.get(absFilePath);
@@ -229,7 +229,7 @@ public final class KotlinTypeAnalysisContext {
     }
 
     /**
-     * Returns the type hierarchy map (Kotlin FQN → direct supertype FQNs).
+     * Returns the type hierarchy map (Kotlin FQN -> direct supertype FQNs).
      * Primarily for testing; empty when no aux classpath was provided.
      */
     public Map<String, List<String>> getTypeHierarchy() {
@@ -238,7 +238,7 @@ public final class KotlinTypeAnalysisContext {
 
     /**
      * Returns true if {@code expected} and {@code actual} refer to the same type,
-     * accounting for Java↔Kotlin name mapping (e.g. java.lang.String ↔ kotlin.String).
+     * accounting for Java<->Kotlin name mapping (e.g. java.lang.String <-> kotlin.String).
      */
     public boolean isTypeEquivalent(String expected, String actual) {
         return TypeNameUtilsKt.typeNamesEquivalent(expected, actual);
@@ -248,7 +248,7 @@ public final class KotlinTypeAnalysisContext {
      * Returns true if {@code actualType} is the same as, or a (transitive) subtype of,
      * {@code expectedType}. Uses the type hierarchy built by kotlin-type-mapper via reflection.
      *
-     * <p>Both Java FQCNs and Kotlin FQNs are accepted for {@code expectedType}. Java↔Kotlin
+     * <p>Both Java FQCNs and Kotlin FQNs are accepted for {@code expectedType}. Java<->Kotlin
      * name equivalence is applied when comparing each type against {@code expectedType}.
      *
      * <p>Falls back to {@link #isTypeEquivalent} when no hierarchy data is available

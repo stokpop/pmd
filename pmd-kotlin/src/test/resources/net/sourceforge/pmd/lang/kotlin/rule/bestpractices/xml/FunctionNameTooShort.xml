@@ -27,7 +27,7 @@ class BadBar {
     </test-code>
 
     <test-code>
-        <description>override fun with short name should not be flagged — cannot rename an override</description>
+        <description>override fun with short name should not be flagged -- cannot rename an override</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class MyListener {
@@ -59,7 +59,7 @@ class EventBus {
     </test-code>
 
     <test-code>
-        <description>'dp' is in the default allowedNames — Android density-pixel helper should not be flagged</description>
+        <description>'dp' is in the default allowedNames -- Android density-pixel helper should not be flagged</description>
         <expected-problems>0</expected-problems>
         <code><![CDATA[
 class MyView {

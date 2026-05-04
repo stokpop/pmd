@@ -136,7 +136,7 @@ class GoodKotlinLogging {
             fields across long-lived objects, may cause memory leaks.
 
             Kotlin idiomatic alternatives:
-            - Use buildString { append(…) } for one-shot construction (returns a String directly).
+            - Use buildString { append(...) } for one-shot construction (returns a String directly).
             - Create a local StringBuilder inside the function that needs it.
             - Prefer string templates ("$var") which the Kotlin compiler optimises automatically.
 
@@ -211,11 +211,11 @@ fun cl() {} // violation
 
 fun calculateLayout() {} // no violation
 
-fun on(listener: () -> Unit) {} // no violation — 'on' is in allowedNames by default
+fun on(listener: () -> Unit) {} // no violation -- 'on' is in allowedNames by default
 
-override fun on(event: String) {} // no violation — overrides are always excluded
+override fun on(event: String) {} // no violation -- overrides are always excluded
 
-fun dp(value: Int): Int = (value * 2.5f).toInt() // no violation — 'dp' is in allowedNames by default (Android convention)
+fun dp(value: Int): Int = (value * 2.5f).toInt() // no violation -- 'dp' is in allowedNames by default (Android convention)
 ]]>
         </example>
     </rule>
@@ -233,9 +233,9 @@ fun dp(value: Int): Int = (value * 2.5f).toInt() // no violation — 'dp' is in 
             implementation can be swapped without breaking API consumers.
 
             In Kotlin, prefer the idiomatic factory functions:
-            - listOf() / mutableListOf() → returns MutableList
-            - setOf() / mutableSetOf() → returns MutableSet
-            - mapOf() / mutableMapOf() → returns MutableMap
+            - listOf() / mutableListOf() -> returns MutableList
+            - setOf() / mutableSetOf() -> returns MutableSet
+            - mapOf() / mutableMapOf() -> returns MutableMap
 
             Note: this rule requires kotlin-type-mapper pre-analysis to be available.
             See the pmd-kotlin documentation for setup instructions.

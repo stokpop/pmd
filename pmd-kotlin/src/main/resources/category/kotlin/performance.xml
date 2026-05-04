@@ -56,7 +56,7 @@ class Good {
         <description>
             Passing a single-character string literal to StringBuilder.append(String) forces the
             JVM to perform a string comparison and then extract the character internally.
-            Using the Char overload — append('x') — is more direct and avoids allocating a
+            Using the Char overload -- append('x') -- is more direct and avoids allocating a
             temporary String object.
 
             Note: this rule requires kotlin-type-mapper pre-analysis to be available.
@@ -329,7 +329,7 @@ class Good {
     <rule name="AvoidInstantiatingObjectsInLoops"
           language="kotlin"
           since="7.x"
-          message="Avoid creating new objects inside loops — consider moving the instantiation outside the loop."
+          message="Avoid creating new objects inside loops -- consider moving the instantiation outside the loop."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#avoidinstantiatingobjectsinloops">
         <description>
@@ -527,8 +527,8 @@ Calling `str.trim()` (or `str.strip()`) before checking `.length` or `.isEmpty()
 unnecessary temporary `String` object just to discard it.
 
 Kotlin idiomatic alternatives:
-- `str.isBlank()` — equivalent to `str.trim().isEmpty()`, checks Unicode whitespace
-- `str.isEmpty()` — checks only for zero length, no trimming needed
+- `str.isBlank()` -- equivalent to `str.trim().isEmpty()`, checks Unicode whitespace
+- `str.isEmpty()` -- checks only for zero length, no trimming needed
 
 Kotlin equivalent of Java rule: category/java/performance.xml/InefficientEmptyStringCheck
         </description>
@@ -751,7 +751,7 @@ Kotlin equivalent of Java rule: category/java/performance.xml/TooFewBranchesForA
             </property>
         </properties>
         <example><![CDATA[
-// violation: only 2 branches — use if/else instead
+// violation: only 2 branches -- use if/else instead
 fun describeSmall(x: Int): String {
     return when (x) {
         0    -> "zero"
@@ -778,8 +778,8 @@ fun describeSign(x: Int): String {
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#useindexofchar">
         <description>
             String.indexOf(String) and String.lastIndexOf(String) perform full substring search
-            when given a single-character argument. The Char overloads — indexOf(Char) and
-            lastIndexOf(Char) — use a simpler linear scan without the overhead of multi-char
+            when given a single-character argument. The Char overloads -- indexOf(Char) and
+            lastIndexOf(Char) -- use a simpler linear scan without the overhead of multi-char
             matching.
 
             Note: this rule requires kotlin-type-mapper pre-analysis to be available.

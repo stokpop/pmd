@@ -65,7 +65,7 @@ class KotlinModifiersFunctionTest {
 
     @Test
     void noModifiersReturnsEmpty() {
-        // plain class, no modifiers → modifiers() = 'abstract' should not fire
+        // plain class, no modifiers -> modifiers() = 'abstract' should not fire
         Report r = run("//ClassDeclaration[pmd-kotlin:modifiers() = 'abstract']",
                 "class Plain");
         assertTrue(r.getViolations().isEmpty(), "plain class should have no modifiers");

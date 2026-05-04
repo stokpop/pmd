@@ -14,12 +14,12 @@ import net.sourceforge.pmd.lang.kotlin.ast.KotlinNode;
  *
  * <p>Supported node types:
  * <ul>
- *   <li>{@code PropertyDeclaration} — property / local variable type</li>
- *   <li>{@code ClassParameter} — primary constructor {@code val}/{@code var} parameter type</li>
- *   <li>{@code FunctionDeclaration} — return type</li>
- *   <li>{@code FunctionValueParameter} — function / constructor parameter type</li>
- *   <li>{@code CatchBlock} — caught exception type</li>
- *   <li>{@code ForStatement} — loop variable type</li>
+ *   <li>{@code PropertyDeclaration} -- property / local variable type</li>
+ *   <li>{@code ClassParameter} -- primary constructor {@code val}/{@code var} parameter type</li>
+ *   <li>{@code FunctionDeclaration} -- return type</li>
+ *   <li>{@code FunctionValueParameter} -- function / constructor parameter type</li>
+ *   <li>{@code CatchBlock} -- caught exception type</li>
+ *   <li>{@code ForStatement} -- loop variable type</li>
  * </ul>
  *
  * <p>Subtype checking uses the type hierarchy built by kotlin-type-mapper via reflection.

@@ -69,7 +69,7 @@ class KotlinIsNullableFunctionTest {
         File kotlinFile = getResource(IS_NULLABLE_RESOURCE_DIR + "/NullableTypes.kt");
         Report report = runXPath("//PropertyDeclaration[pmd-kotlin:isNullable()]", kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // names: List<String> at line 6 — NOT nullable
+        // names: List<String> at line 6 -- NOT nullable
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 6),
                 "Did not expect violation at line 6 (names: List<String>)");
     }
@@ -89,7 +89,7 @@ class KotlinIsNullableFunctionTest {
         File kotlinFile = getResource(IS_NULLABLE_RESOURCE_DIR + "/NullableTypes.kt");
         Report report = runXPath("//FunctionDeclaration[pmd-kotlin:isNullable()]", kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // getItem(): String at line 12 — NOT nullable
+        // getItem(): String at line 12 -- NOT nullable
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 12),
                 "Did not expect violation at line 12 (getItem(): String)");
     }
@@ -99,7 +99,7 @@ class KotlinIsNullableFunctionTest {
         File kotlinFile = getResource(IS_NULLABLE_RESOURCE_DIR + "/NullableTypes.kt");
         Report report = runXPath("//FunctionValueParameter[pmd-kotlin:isNullable()]", kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // fun process(input: String?) at line 18 — nullable parameter
+        // fun process(input: String?) at line 18 -- nullable parameter
         assertTrue(report.getViolations().stream().anyMatch(v -> v.getBeginLine() == 18),
                 "Expected violation at line 18 (input: String?)");
     }
@@ -109,7 +109,7 @@ class KotlinIsNullableFunctionTest {
         File kotlinFile = getResource(IS_NULLABLE_RESOURCE_DIR + "/NullableTypes.kt");
         Report report = runXPath("//FunctionValueParameter[pmd-kotlin:isNullable()]", kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
-        // fun transform(input: String) at line 21 — NOT nullable
+        // fun transform(input: String) at line 21 -- NOT nullable
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 21),
                 "Did not expect violation at line 21 (input: String)");
     }

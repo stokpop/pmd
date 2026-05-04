@@ -2,7 +2,7 @@ package nl.stokpop.kotlin
 
 import java.io.Serializable
 
-// Primary constructor val/var parameters — ClassParameter nodes in the AST.
+// Primary constructor val/var parameters -- ClassParameter nodes in the AST.
 // 'value' should match typeIs('kotlin.String')
 // 'id' should match typeIs('kotlin.Int') / typeIs('java.lang.Integer')
 // 'tag' should NOT match typeIs('kotlin.String')

@@ -144,7 +144,7 @@ class KotlinMatchesSigFunctionTest {
                 kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 14),
-                "Line 14 is a re-throw, not printStackTrace — should not match");
+                "Line 14 is a re-throw, not printStackTrace -- should not match");
     }
 
     @Test
@@ -184,7 +184,7 @@ class KotlinMatchesSigFunctionTest {
                 kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 8),
-                "Line 8 is simple arithmetic — should not match");
+                "Line 8 is simple arithmetic -- should not match");
     }
 
     // --- AvoidCalendarDateCreation ---
@@ -208,7 +208,7 @@ class KotlinMatchesSigFunctionTest {
                 kotlinFile);
         assertTrue(report.getProcessingErrors().isEmpty(), "No processing errors expected");
         assertTrue(report.getViolations().stream().noneMatch(v -> v.getBeginLine() == 10),
-                "Line 10 uses LocalDateTime.now() — should not match Calendar.getInstance");
+                "Line 10 uses LocalDateTime.now() -- should not match Calendar.getInstance");
     }
 
     private Report runXPath(String xpathExpr, File kotlinFile) {

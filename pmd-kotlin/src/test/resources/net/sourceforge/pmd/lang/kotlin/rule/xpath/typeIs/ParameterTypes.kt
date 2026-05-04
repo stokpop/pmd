@@ -32,14 +32,14 @@ class ParameterTypes {
         }
     }
 
-    // ForStatement: items are Calendar — should match typeIs('java.util.Calendar')
+    // ForStatement: items are Calendar -- should match typeIs('java.util.Calendar')
     fun processList(items: List<Calendar>) {
         for (item in items) {                      // line 37
             item.time
         }
     }
 
-    // ForStatement: loop over strings — should NOT match typeIs('java.util.Calendar')
+    // ForStatement: loop over strings -- should NOT match typeIs('java.util.Calendar')
     fun processStrings(items: List<String>) {
         for (s in items) {                         // line 44
             println(s)

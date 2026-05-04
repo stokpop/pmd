@@ -22,7 +22,7 @@ import nl.stokpop.typemapper.model.SignatureMatcherKt;
  * <p>Returns {@code true} when the context node corresponds to a call site whose
  * signature matches {@code sig}. The signature format mirrors PMD Java's
  * {@code matchesSig}, but both Java FQCNs and Kotlin FQNs are accepted for
- * receiver and parameter types (e.g. {@code java.lang.String} ↔ {@code kotlin.String}).
+ * receiver and parameter types (e.g. {@code java.lang.String} <-> {@code kotlin.String}).
  *
  * <p>Signature format: {@code [receiverType#]methodName(paramType,...)}
  * <ul>
@@ -37,20 +37,20 @@ import nl.stokpop.typemapper.model.SignatureMatcherKt;
  * <p><b>How type resolution works:</b> Before any rules are evaluated, the Kotlin K1 compiler
  * (via kotlin-type-mapper) analyzes all source files using the aux classpath jars to resolve types
  * and record call site signatures into {@link KotlinTypeAnalysisContext}. At rule evaluation time,
- * {@code matchesSig} only queries that pre-computed data — no jars are needed then.
+ * {@code matchesSig} only queries that pre-computed data -- no jars are needed then.
  * If a required jar is missing from the classpath, the type will be unresolved and the
  * {@code UnresolvedType} rule will fire as a signal, while {@code matchesSig} returns {@code false}.
  *
  * <p><b>Multi-line chain support:</b> When a {@code PostfixUnaryExpression} spans multiple lines
  * (e.g. a method call split across lines), call sites are restricted to lines where a direct
- * {@code PostfixUnarySuffix} child starts — covering all chain links while excluding call sites
+ * {@code PostfixUnarySuffix} child starts -- covering all chain links while excluding call sites
  * that belong to nested lambda bodies or block arguments. Block-like expressions
  * ({@code try}, {@code when}, etc.) that have no direct {@code PostfixUnarySuffix} children
  * are never matched, preventing false positives from enclosing blocks. Example of a correctly
  * matched multi-line chain:
  * <pre>{@code
  * val expr = xpath
- *     .compile("//book") // call on line N+1 — correctly matched
+ *     .compile("//book") // call on line N+1 -- correctly matched
  * }</pre>
  *
  * <p>Example XPath:
@@ -131,7 +131,7 @@ public final class KotlinMatchesSigFunction extends BaseKotlinXPathFunction {
                 }
                 if (suffixBeginLines.isEmpty()) {
                     // No direct PostfixUnarySuffix children: this node is a block-like
-                    // expression (try, when, …), not a direct method-call chain.
+                    // expression (try, when, ...), not a direct method-call chain.
                     return false;
                 }
             }
