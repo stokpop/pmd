@@ -314,6 +314,13 @@ class Good {
             and not(PostfixUnarySuffix)
         ]
     )
+    and not(
+        .//PostfixUnaryExpression[
+            PrimaryExpression[@Identifier = ancestor::CatchBlock[1]/@Identifier]
+            and not(PostfixUnarySuffix)
+            and not(ancestor::ValueArguments)
+        ]
+    )
 ]
                 ]]></value>
             </property>

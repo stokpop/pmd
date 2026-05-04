@@ -108,4 +108,40 @@ class Foo {
         ]]></code>
     </test-code>
 
+    <test-code>
+        <description>direct rethrow of caught exception is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Foo {
+    fun good() {
+        try {
+            doSomething()
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+    private fun doSomething() {}
+}
+        ]]></code>
+    </test-code>
+
+    <test-code>
+        <description>direct rethrow of CancellationException is not a violation</description>
+        <expected-problems>0</expected-problems>
+        <code><![CDATA[
+class Foo {
+    fun good() {
+        try {
+            doSomething()
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            throw RuntimeException("wrapped", e)
+        }
+    }
+    private fun doSomething() {}
+}
+        ]]></code>
+    </test-code>
+
 </test-data>
