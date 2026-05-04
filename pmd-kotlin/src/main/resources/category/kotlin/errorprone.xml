@@ -9,6 +9,60 @@
 Rules to detect constructs that are either broken, extremely confusing or prone to runtime errors.
     </description>
 
+    <rule name="AvoidBranchingStatementAsLastInLoop"
+          language="kotlin"
+          since="7.25.0"
+          message="Branching statement directly in loop body without conditional guard makes the loop execute only once."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#avoidbranchingstatementaslastinloop">
+        <description>
+            Using a break, continue, or return directly in the body of a loop (not guarded by an if or
+            when) causes the loop to execute at most once. This is almost always a bug or confusing code.
+            Wrap the branching statement inside a conditional to make the intent explicit.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//JumpExpression[
+    (T-BREAK or T-CONTINUE or T-RETURN)
+    and (ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement)
+    and not(ancestor::IfExpression[
+        ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
+    ])
+    and not(ancestor::WhenExpression[
+        ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
+    ])
+    and not(ancestor::LambdaLiteral[
+        ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
+    ])
+    and not(ancestor::AnonymousFunction[
+        ancestor::ForStatement or ancestor::WhileStatement or ancestor::DoWhileStatement
+    ])
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: the loop always executes exactly once
+fun first(list: List<Int>): Int? {
+    for (i in list) {
+        return i  // should be: if (condition) { return i }
+    }
+    return null
+}
+
+// ok: break is guarded by an if
+fun findFirst(list: List<Int>, target: Int) {
+    for (i in list) {
+        if (i == target) {
+            break
+        }
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="AvoidCallingFinalize"
           language="kotlin"
           since="7.x"

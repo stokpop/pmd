@@ -285,6 +285,69 @@ class Good {
         ]]></example>
     </rule>
 
+    <rule name="PreserveStackTrace"
+          language="kotlin"
+          since="7.25.0"
+          message="The original exception should be passed as the cause when throwing a new exception from a catch block."
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
+          externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#preservestacktrace">
+        <description>
+            When catching an exception and throwing a new one from within a catch block, the original
+            exception should be passed as the cause argument so that the original stack trace is preserved.
+            Without it, the root cause of the problem is lost. Exception: catch variables named with the
+            ignored prefix or underscore are intentionally discarded and are not flagged.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value><![CDATA[
+//JumpExpression[
+    T-THROW
+    and not(ancestor::LambdaLiteral or ancestor::AnonymousFunction)
+    and ancestor::CatchBlock[1][
+        not(starts-with(@Identifier, 'ignored'))
+        and not(@Identifier = '_')
+    ]
+    and not(
+        .//ValueArguments//PostfixUnaryExpression[
+            PrimaryExpression[@Identifier = ancestor::CatchBlock[1]/@Identifier]
+            and not(PostfixUnarySuffix)
+        ]
+    )
+]
+                ]]></value>
+            </property>
+        </properties>
+        <example><![CDATA[
+// violation: original exception e is lost
+fun bad() {
+    try {
+        doSomething()
+    } catch (e: Exception) {
+        throw RuntimeException("msg")  // e not passed
+    }
+}
+
+// ok: original exception passed as cause
+fun good() {
+    try {
+        doSomething()
+    } catch (e: Exception) {
+        throw RuntimeException("msg", e)
+    }
+}
+
+// ok: intentionally ignored
+fun expected() {
+    try {
+        doSomething()
+    } catch (ignoredException: Exception) {
+        throw RuntimeException("known failure")
+    }
+}
+        ]]></example>
+    </rule>
+
     <rule name="SystemPrintln"
           language="kotlin"
           since="7.x"
