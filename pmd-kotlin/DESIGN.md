@@ -496,6 +496,37 @@ terminal tokens, not another `SimpleIdentifier`.
 For standalone `simpleIdentifier` children, use `SimpleIdentifier/T-Identifier/@Text`
 instead.
 
+### 7.1 `getImage()` and XPath rule violation messages (`{0}`)
+
+PMD's `XPathRule.apply()` always tries `node.getImage()` first and uses the result
+as the `{0}` argument in the rule's `message` attribute (MessageFormat syntax).
+Fallback: it probes attributes `Name`, `SimpleName`, `MethodName`, `Value` in order.
+This mechanism was already in place in PMD core — it just needs the node to return a
+meaningful string from `getImage()`.
+
+`KotlinInnerNode.getImage()` is `null` by default, so any XPath rule pointing at a
+Kotlin AST node would render `{0}` as the literal string `"null"` in its message.
+
+To include dynamic text in a rule message, override `getImage()` in `KotlinInnerNode`
+for the relevant `RULE_*` index and return the desired string.  The `ImportHeader`
+node uses this to expose the fully-qualified import name:
+
+```java
+@Override
+public @Nullable String getImage() {
+    if (getRuleIndex() == KotlinParser.RULE_importHeader) {
+        return buildImportFqn(); // walks KtIdentifier children, joins with '.'
+    }
+    return null;
+}
+```
+
+The rule message then uses `{0}` (MessageFormat — single quotes must be doubled):
+
+```xml
+message="Type ''{0}'' could not be resolved -- add the missing dependency..."
+```
+
 ---
 
 ## 8. Type Analysis in Unit Tests

@@ -891,7 +891,7 @@ class Good {
     <rule name="UnresolvedType"
           language="kotlin"
           since="7.x"
-          message="Type could not be resolved for this import -- add the missing dependency to the PMD analysis classpath for full type-aware analysis."
+          message="Type ''{0}'' could not be resolved -- add the missing dependency to the PMD analysis classpath for full type-aware analysis."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_errorprone.html#unresolvedtype">
         <description>

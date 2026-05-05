@@ -463,7 +463,7 @@ class Good {
     <rule name="UseStandardCharsets"
           language="kotlin"
           since="7.14.0"
-          message="Use StandardCharsets.{0} instead of Charset.forName(&quot;{0}&quot;)"
+          message="Use a StandardCharsets constant instead of Charset.forName(String)"
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_bestpractices.html#usestandardcharsets">
         <description>

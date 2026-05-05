@@ -84,6 +84,49 @@ abstract class KotlinInnerNode extends BaseAntlrInnerNode<KotlinNode> implements
     }
 
     /**
+     * Returns the imported type's fully-qualified name for {@code ImportHeader} nodes
+     * (e.g. {@code "com.example.Foo"} for {@code import com.example.Foo}).
+     * Returns {@code null} for all other node types.
+     *
+     * <p>This is used by PMD's XPath rule engine as {@code {0}} in violation messages,
+     * so that the unresolved type name appears in the message text.
+     */
+    @Override
+    public @Nullable String getImage() {
+        if (getRuleIndex() == KotlinParser.RULE_importHeader) {
+            return buildImportFqn();
+        }
+        return null;
+    }
+
+    private @Nullable String buildImportFqn() {
+        for (int i = 0; i < getNumChildren(); i++) {
+            KotlinNode child = getChild(i);
+            if (child instanceof KotlinParser.KtIdentifier) {
+                return buildFqnFromIdentifier(child);
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable String buildFqnFromIdentifier(KotlinNode identifierNode) {
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < identifierNode.getNumChildren(); j++) {
+            KotlinNode part = identifierNode.getChild(j);
+            if (part instanceof KotlinParser.KtSimpleIdentifier && part.getNumChildren() > 0) {
+                KotlinNode token = part.getChild(0);
+                if (token instanceof KotlinTerminalNode) {
+                    if (sb.length() > 0) {
+                        sb.append('.');
+                    }
+                    sb.append(((KotlinTerminalNode) token).getText());
+                }
+            }
+        }
+        return sb.length() > 0 ? sb.toString() : null;
+    }
+
+    /**
      * Returns the text of the first {@code SimpleIdentifier} direct child,
      * or {@code null} if none is present.
      */
