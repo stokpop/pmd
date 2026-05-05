@@ -724,7 +724,7 @@ class Good {
     <rule name="TooFewBranchesForWhenExpression"
           language="kotlin"
           since="7.x"
-          message="A when expression with fewer than {0} branches can be replaced with a simpler if/else."
+          message="A when expression with too few branches can be replaced with a simpler if/else."
           class="net.sourceforge.pmd.lang.rule.xpath.XPathRule"
           externalInfoUrl="${pmd.website.baseurl}/pmd_rules_kotlin_performance.html#toofewbranchesforwhenexpression">
         <description>
